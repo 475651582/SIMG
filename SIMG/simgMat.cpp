@@ -10,6 +10,7 @@ Mat::Mat()
 	_dataPtr = NULL;
 	_pcount = new size_t(1);
 	_originalFormat = SIMG_FORMAT_IMG_NONE;
+	init();
 }
 
 Mat::Mat(int ncols, int nrows, int datatype)

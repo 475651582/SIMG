@@ -71,47 +71,35 @@ Mat Simg::imread(const char* path)
 	return ret;
 }
 
-int Simg::namedWindow(const char * windowName, int windowStyle)
+
+int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, int w, int h)
 {
-	
-	HWND         hwnd;
-	
-	WNDCLASSEX   wndclassex = { 0 };
 
-	wndclassex.cbSize = sizeof(WNDCLASSEX);
-	wndclassex.style = CS_HREDRAW | CS_VREDRAW;
-	wndclassex.lpfnWndProc = WndProc;
-	wndclassex.cbClsExtra = 0;
-	wndclassex.cbWndExtra = 0;
-	wndclassex.hInstance = hg_hinstance;
-	wndclassex.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wndclassex.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wndclassex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	wndclassex.lpszClassName = windowName;
-	wndclassex.hIconSm = wndclassex.hIcon;
 
-	if (!RegisterClassEx(&wndclassex))
+	//先检测是否存在这个窗体
+	for (size_t i = 0; i < windowsList.size(); i++)
 	{
-		MessageBox(NULL, TEXT("RegisterClassEx failed!"), windowName, MB_ICONERROR);
-		return 0;
+		sWindow win = windowsList[i];
+		if (0==strcmp(windowName, win.windowName()))
+		{
+			//已经建立过同名窗体，跳过
+			return -1;
+		}
 	}
-	hwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW,
-		windowName,
-		windowName,
-		WS_OVERLAPPEDWINDOW,
-		0,
-		0,
-		500,
-		500,
-		NULL,
-		NULL,
-		hg_hinstance,
-		NULL);
+	sWindow win(windowName, x, y, w, h);
+	if (0 == windowsList.size())
+	{
+		//windowsList.reserve(MAX_WINDOW_NUMBER);
+	}
+	windowsList.push_back(win);
 
-	ShowWindow(hwnd, 1);
-	UpdateWindow(hwnd);
 	
+
+	return 1;
+
 }
+
+
 
 int Simg::waitKey()
 {
@@ -124,74 +112,16 @@ int Simg::waitKey()
 	return 0;
 }
 
-
-
-
-LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+int Simg::imshow(const char * windowName, Mat img)
 {
-	HDC hdc;
-	PAINTSTRUCT ps;
-	static RECT rect;
-	TCHAR szDrawText[] = TEXT("欢迎访问我的博客http://blog.csdn.net/wenzhou1219");
-
-	switch (message)
+	namedWindow(windowName);
+	for (size_t i = 0; i < windowsList.size(); i++)
 	{
-	case WM_SIZE:
-		GetClientRect(hwnd, &rect);
-		return (0);
-
-	case WM_PAINT:
-	{
-		HDC hdcmem;
-		HBITMAP hbmp;
-		
-
-		hdc = BeginPaint(hwnd, &ps);
-		hdcmem = CreateCompatibleDC(hdc);
-		hbmp = (HBITMAP)LoadImage(NULL, "D:\\0.data\\test.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-
-		char* buffer = new  char[480 * 480 * 3];
-		for (size_t i = 0; i < 480 * 480; i++)
+		sWindow win = windowsList[i];
+		if (0 == strcmp(windowName, win.windowName()))
 		{
-			buffer[3 * i] = 255;
-			buffer[3 * i + 1] = 0;
-			buffer[3 * i + 2] = 125;
+			win.loadMat(img);
 		}
-
-		BITMAPINFO bmpInfo; //创建位图 
-		bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bmpInfo.bmiHeader.biWidth = 480;//宽度
-		bmpInfo.bmiHeader.biHeight = 480;//高度
-		bmpInfo.bmiHeader.biPlanes = 1;
-		bmpInfo.bmiHeader.biBitCount = 24;
-		bmpInfo.bmiHeader.biCompression = BI_RGB;
-
-		UINT uiTotalBytes = 480 * 480 * 3;
-		void *pArray = new BYTE(uiTotalBytes);
-		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &pArray, NULL, 0);//创建DIB
-
-																				  //! 将裸数据复制到bitmap关联的像素区域
-		memcpy(pArray, buffer, uiTotalBytes);
-
-
-
-		//GetObject(hbmp, sizeof(bmp), &bmp);
-		SelectObject(hdcmem, hbmp);
-		//BitBlt(hdc, 0, 0, bmp.bmWidth, bmp.bmHeight, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
-		BitBlt(hdc, 0, 0, 480, 480, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
-
-		DeleteObject(hbmp);
-		DeleteDC(hdcmem);
-		EndPaint(hwnd, &ps);
-		return (0);
 	}
-
-
-
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		return (0);
-	}
-
-	return DefWindowProc(hwnd, message, wParam, lParam);
+	return 0;
 }

@@ -79,6 +79,8 @@ namespace Simg
 		friend Mat imread(const char* path);
 		uchar* dataPtr();
 
+		friend class sWindow;
+		friend LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 	private:
 
