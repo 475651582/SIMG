@@ -55,6 +55,28 @@ Simg::sWindow::sWindow(const char * winName, int x, int y, int w, int h)
 	
 }
 
+void Simg::sWindow::resize(int w, int h)
+{
+	CloseWindow(_hwnd);
+	_w = w; _h = h;
+	_hwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW,
+		_windowName,
+		_windowName,
+		WS_OVERLAPPEDWINDOW,
+		_x,
+		_y,
+		_w,
+		_h,
+		NULL,
+		NULL,
+		hg_hinstance,
+		NULL);
+
+
+	ShowWindow(_hwnd, 1);
+	UpdateWindow(_hwnd);
+}
+
 Simg::sWindow::~sWindow()
 {
 }
@@ -95,30 +117,30 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		hdc = BeginPaint(hwnd, &ps);
 		//绘制mat
 		//遍历windowsList，寻找被激活的窗体ID
-		sWindow win = windowsList[0];
+		sWindow *win = NULL;
 		for (size_t i = 0; i < windowsList.size(); i++)
 		{
-			win = windowsList[i];
-			if (win.hwnd() == hwnd)
+			win = &windowsList[i];
+			if (win->hwnd() == hwnd)
 			{
 				break;
 			}
 		}
-		if (!win._initialized)
+		if (!win->_initialized)
 		{
 			return 0;
 		}
 
 		hdcmem = CreateCompatibleDC(hdc);
-		UINT uiTotalBytes = win._mat._rows * win._mat._cols * 3;
+		UINT uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
 		char* buffer = new  char[uiTotalBytes];
-		memcpy(buffer, win._mat._dataPtr, uiTotalBytes);
+		memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
 		
 
 		BITMAPINFO bmpInfo; //创建位图 
 		bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bmpInfo.bmiHeader.biWidth = win._mat._cols;//宽度
-		bmpInfo.bmiHeader.biHeight = win._mat._rows;//高度
+		bmpInfo.bmiHeader.biWidth = win->_mat._cols;//宽度
+		bmpInfo.bmiHeader.biHeight = win->_mat._rows;//高度
 		bmpInfo.bmiHeader.biPlanes = 1;
 		bmpInfo.bmiHeader.biBitCount = 24;
 		bmpInfo.bmiHeader.biCompression = BI_RGB;
@@ -135,7 +157,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		//GetObject(hbmp, sizeof(bmp), &bmp);
 		SelectObject(hdcmem, hbmp);
 		//BitBlt(hdc, 0, 0, bmp.bmWidth, bmp.bmHeight, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
-		BitBlt(hdc, 0, 0, 480, 480, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
+		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
 
 		DeleteObject(hbmp);
 		DeleteDC(hdcmem);

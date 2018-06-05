@@ -75,6 +75,8 @@ namespace Simg
 			++*_pcount;
 		}
 		uchar* row(int indRow);
+		int rows() { return _rows; };
+		int cols() { return _cols; };
 		~Mat();
 		friend Mat imread(const char* path);
 		uchar* dataPtr();

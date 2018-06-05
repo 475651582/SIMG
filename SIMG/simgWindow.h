@@ -16,6 +16,7 @@ namespace Simg
 	public:
 		sWindow();
 		sWindow(const char* winName, int x = 0, int y = 0, int w = 0, int h = 0);
+		void resize(int w = 0, int h = 0);
 		~sWindow();
 		char* windowName() { return _windowName; };
 		
@@ -40,7 +41,7 @@ namespace Simg
 	
 	LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);	//所有窗口消息处理入口
 	static HINSTANCE hg_hinstance = 0;
-	static std::vector<sWindow> windowsList;
+	
 }
 
-
+extern std::vector<Simg::sWindow> windowsList;

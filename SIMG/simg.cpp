@@ -3,6 +3,8 @@
 
 using namespace Simg;
 
+std::vector<sWindow> windowsList;
+
 Mat Simg::readBMP(const char *path)
 {
 	//bmp存储方式是以左下角第一个像素为坐标原点的，和通常的使用习惯不太一致，需在索引的时候注意。
@@ -87,13 +89,11 @@ int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, in
 		}
 	}
 	sWindow win(windowName, x, y, w, h);
-	if (0 == windowsList.size())
-	{
-		//windowsList.reserve(MAX_WINDOW_NUMBER);
-	}
+	
 	windowsList.push_back(win);
 
-	
+	std::vector<sWindow> aaa;
+	aaa.push_back(win);
 
 	return 1;
 
@@ -114,14 +114,15 @@ int Simg::waitKey()
 
 int Simg::imshow(const char * windowName, Mat img)
 {
-	namedWindow(windowName);
+	namedWindow(windowName, 0, 0, 0, img.cols(), img.rows());
 	for (size_t i = 0; i < windowsList.size(); i++)
 	{
-		sWindow win = windowsList[i];
-		if (0 == strcmp(windowName, win.windowName()))
+		sWindow *win = &windowsList[i];
+		if (0 == strcmp(windowName, win->windowName()))
 		{
-			win.loadMat(img);
+			win->loadMat(img);
 		}
 	}
+
 	return 0;
 }
