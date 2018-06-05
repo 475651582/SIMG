@@ -77,6 +77,7 @@ namespace Simg
 		uchar* row(int indRow);
 		int rows() { return _rows; };
 		int cols() { return _cols; };
+		int channels() { return _channels; };
 		~Mat();
 		friend Mat imread(const char* path);
 		uchar* dataPtr();
@@ -97,6 +98,7 @@ namespace Simg
 		int _dataLength; //data length of whole Mat
 		int _dataType;	//data type of Mat
 		int _originalFormat;	//the orginal format of the image, applicable if the image is loaded from a file.
+		int _channels;			//[reserved] channel number of the Mat. 
 		uchar *_dataPtr;	//original data pointer
 
 		size_t* _pcount; //copy ref counter

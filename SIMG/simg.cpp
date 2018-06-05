@@ -3,7 +3,7 @@
 
 using namespace Simg;
 
-std::vector<sWindow> windowsList;
+std::vector<Simg::sWindow> windowsList;
 
 Mat Simg::readBMP(const char *path)
 {
@@ -15,7 +15,7 @@ Mat Simg::readBMP(const char *path)
 	BITMAPFILEHEADER bf;					//图像文件头
 	BITMAPINFOHEADER bi;					//图像文件头信息
 	uchar *buf;								//定义文件读取缓冲区
-
+	int channels = 3;						//默认图像为RGB三通道
 	FILE *fp = fopen(path, "rb");
 	assert(fp != 0);
 
@@ -23,20 +23,43 @@ Mat Simg::readBMP(const char *path)
 	fread(&bf, sizeof(BITMAPFILEHEADER), 1, fp);
 	fread(&bi, sizeof(BITMAPINFOHEADER), 1, fp);//读取BMP文件头文件信息
 
+	
+
 	w = bi.biWidth;                            //获取图像的宽
 	h = bi.biHeight;                           //获取图像的高
 	bitSize = bi.biSizeImage;                  //获取图像的size
 
-	buf = new uchar[w*h * 3];                //分配缓冲区大小		
-	fread(buf, 1, w*h * 3, fp);                   //开始读取数据
 
-	ret = Mat(w, h, SIMG_3C8U);
-	memcpy(ret.dataPtr(), buf, w*h * 3);
+	switch (bi.biBitCount)
+	{
+	case 24:	//24位图
+	{
+		channels = 3;
 
-	delete buf; buf = NULL;
+		buf = new uchar[w * h * channels];                //分配缓冲区大小		
+		fread(buf, 1, w * h * channels, fp);                  //开始读取数据
+		ret = Mat(w, h, SIMG_3C8U);
+		memcpy(ret.dataPtr(), buf, w * h * channels);	//copy bmp data to the new Mat
 
-	fclose(fp);
-	return ret;
+
+		fclose(fp);
+		delete buf; buf = NULL;
+		return ret;
+		break;
+	}
+	case 8:		//8位图
+	{
+		//reserved
+		return ret;
+		break;
+	}
+	default:
+		//reserved
+		return ret;
+		break;
+	}
+
+
 }
 
 
@@ -112,9 +135,9 @@ int Simg::waitKey()
 	return 0;
 }
 
-int Simg::imshow(const char * windowName, Mat img)
+int Simg::imshow(const char * windowName, Mat img, int windowStyle)
 {
-	namedWindow(windowName, 0, 0, 0, img.cols(), img.rows());
+	namedWindow(windowName, windowStyle, 0, 0, img.cols(), img.rows());
 	for (size_t i = 0; i < windowsList.size(); i++)
 	{
 		sWindow *win = &windowsList[i];

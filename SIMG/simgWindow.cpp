@@ -11,16 +11,15 @@ Simg::sWindow::sWindow()
 {
 }
 
-Simg::sWindow::sWindow(const char * winName, int x, int y, int w, int h)
+Simg::sWindow::sWindow(const char * winName, int x, int y, int w, int h, int windowStyle)
 {
-	//TODO 参数检测没做呢
+	
+	assert(x >=0 && y >= 0 && w >= 0 && h >= 0);
 	strcpy(_windowName, winName);
 	_x = x; _y = y; _w = w; _h = h;
-	_channel = 3;
 	_initialized = false;
 
 	wndclassex = { 0 };
-
 	wndclassex.cbSize = sizeof(WNDCLASSEX);
 	wndclassex.style = CS_HREDRAW | CS_VREDRAW;
 	wndclassex.lpfnWndProc = WndProc;
@@ -83,7 +82,9 @@ Simg::sWindow::~sWindow()
 
 int Simg::sWindow::loadMat(Mat m)
 {
-	_mat = Mat(m);
+	assert(NULL != m._dataPtr);
+
+	_mat = Mat(m); 
 	_initialized = true;
 
 	ShowWindow(_hwnd, 1);
@@ -111,9 +112,11 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 	case WM_PAINT:
 	{
-	
-		HDC hdcmem;
+		HDC hdcmem = NULL;
 		HBITMAP hbmp;
+		char* buffer = NULL;	//绘图buffer
+		void *pArray;	//给位图的绘图buffer
+		UINT uiTotalBytes;
 		hdc = BeginPaint(hwnd, &ps);
 		//绘制mat
 		//遍历windowsList，寻找被激活的窗体ID
@@ -121,23 +124,16 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		for (size_t i = 0; i < windowsList.size(); i++)
 		{
 			win = &windowsList[i];
-			if (win->hwnd() == hwnd)
-			{
-				break;
-			}
+			if (win->hwnd() == hwnd) break;
 		}
+
+		//没有被分配mat的窗体不进行后续的显示操作（loadMat，初始化）
 		if (!win->_initialized)
 		{
 			return 0;
 		}
-
-		hdcmem = CreateCompatibleDC(hdc);
-		UINT uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
-		char* buffer = new  char[uiTotalBytes];
-		memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
 		
-
-		BITMAPINFO bmpInfo; //创建位图 
+		BITMAPINFO bmpInfo; //创建位图信息
 		bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		bmpInfo.bmiHeader.biWidth = win->_mat._cols;//宽度
 		bmpInfo.bmiHeader.biHeight = win->_mat._rows;//高度
@@ -145,18 +141,30 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		bmpInfo.bmiHeader.biBitCount = 24;
 		bmpInfo.bmiHeader.biCompression = BI_RGB;
 
+		switch (win->_mat._dataType)
+		{
+		case SIMG_3C8U:
+		{
+			hdcmem = CreateCompatibleDC(hdc);
+			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			buffer = new  char[uiTotalBytes];
+			memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
+		}
+		default:
+			break;
+		}
 		
-		void *pArray = new BYTE(uiTotalBytes);
-		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &pArray, NULL, 0);//创建DIB
-
-																				  //! 将裸数据复制到bitmap关联的像素区域
-		memcpy(pArray, buffer, uiTotalBytes);
+		
 
 
 
-		//GetObject(hbmp, sizeof(bmp), &bmp);
+		
+		pArray = new BYTE(uiTotalBytes);
+		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &pArray, NULL, 0);//创建DIB																				  
+		memcpy(pArray, buffer, uiTotalBytes);	//! 将裸数据复制到bitmap关联的像素区域
+
+
 		SelectObject(hdcmem, hbmp);
-		//BitBlt(hdc, 0, 0, bmp.bmWidth, bmp.bmHeight, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
 		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //将内存中的图拷贝到屏幕上进行显示
 
 		DeleteObject(hbmp);
@@ -167,8 +175,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		buffer = NULL; pArray = NULL;
 		return (0);
 	}
-
-
+	
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
