@@ -62,6 +62,19 @@ Mat Simg::readBMP(const char *path)
 
 }
 
+Mat Simg::readJPG(const char * path)
+{
+	Mat ret;
+	int w = 0, h = 0, comps = 0;
+	int channels = 3;
+	uchar *buf = jpgd::decompress_jpeg_image_from_file(path, &w, &h, &comps, 3);
+	ret = Mat(w, h, SIMG_3C8U);
+	memcpy(ret.dataPtr(), buf, w * h * channels);	//copy bmp data to the new Mat
+
+	delete buf; buf = NULL;
+	return ret;
+}
+
 
 Mat Simg::imread(const char* path)
 {
@@ -82,6 +95,7 @@ Mat Simg::imread(const char* path)
 	}
 	else if ("jpg" == suffix)
 	{
+		ret = Simg::readJPG(path);
 		ret._originalFormat = SIMG_FORMAT_IMG_JPEG;
 	}
 	else if ("png" == suffix)

@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="jpgd.h" />
     <ClInclude Include="simg.h" />
     <ClInclude Include="simgMat.h" />
     <ClInclude Include="simgWindow.h" />
@@ -156,6 +157,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="jpgd.cpp" />
     <ClCompile Include="simg.cpp" />
     <ClCompile Include="simgMat.cpp" />
     <ClCompile Include="simgWindow.cpp" />

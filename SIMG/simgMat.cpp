@@ -46,7 +46,7 @@ uchar * Mat::row(int indRow)
 	}
 	if (SIMG_FORMAT_IMG_BMP == _originalFormat)
 	{
-		//bmp默认是从左下角开始的第一个像素
+		//bmp format start from lowerleft pixel
 		return _dataPtr + _colDataLength * (_rows - indRow - 1);
 	}
 	else

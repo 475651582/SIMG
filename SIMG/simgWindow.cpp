@@ -114,12 +114,12 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 	{
 		HDC hdcmem = NULL;
 		HBITMAP hbmp;
-		char* buffer = NULL;	//»æÍ¼buffer
-		void *pArray;	//¸øÎ»Í¼µÄ»æÍ¼buffer
+		char* buffer = NULL;	//ï¿½ï¿½Í¼buffer
+		void *pArray;	//ï¿½ï¿½Î»Í¼ï¿½Ä»ï¿½Í¼buffer
 		UINT uiTotalBytes;
 		hdc = BeginPaint(hwnd, &ps);
-		//»æÖÆmat
-		//±éÀúwindowsList£¬Ñ°ÕÒ±»¼¤»îµÄ´°ÌåID
+		//ï¿½ï¿½ï¿½ï¿½mat
+		//ï¿½ï¿½ï¿½ï¿½windowsListï¿½ï¿½Ñ°ï¿½Ò±ï¿½ï¿½ï¿½ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ID
 		sWindow *win = NULL;
 		for (size_t i = 0; i < windowsList.size(); i++)
 		{
@@ -127,16 +127,16 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			if (win->hwnd() == hwnd) break;
 		}
 
-		//Ã»ÓÐ±»·ÖÅämatµÄ´°Ìå²»½øÐÐºóÐøµÄÏÔÊ¾²Ù×÷£¨loadMat£¬³õÊ¼»¯£©
+		//Ã»ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½matï¿½Ä´ï¿½ï¿½å²»ï¿½ï¿½ï¿½Ðºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½loadMatï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½
 		if (!win->_initialized)
 		{
 			return 0;
 		}
 		
-		BITMAPINFO bmpInfo; //´´½¨Î»Í¼ÐÅÏ¢
+		BITMAPINFO bmpInfo; //ï¿½ï¿½ï¿½ï¿½Î»Í¼ï¿½ï¿½Ï¢
 		bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-		bmpInfo.bmiHeader.biWidth = win->_mat._cols;//¿í¶È
-		bmpInfo.bmiHeader.biHeight = win->_mat._rows;//¸ß¶È
+		bmpInfo.bmiHeader.biWidth = win->_mat._cols;//ï¿½ï¿½ï¿½
+		bmpInfo.bmiHeader.biHeight = win->_mat._rows;//ï¿½ß¶ï¿½
 		bmpInfo.bmiHeader.biPlanes = 1;
 		bmpInfo.bmiHeader.biBitCount = 24;
 		bmpInfo.bmiHeader.biCompression = BI_RGB;
@@ -148,7 +148,20 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			hdcmem = CreateCompatibleDC(hdc);
 			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
 			buffer = new  char[uiTotalBytes];
-			memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
+
+			//since we show the pic in bmp format, bmp file don't need to convert, other format of file need to convert.
+			if (SIMG_FORMAT_IMG_BMP == win->_mat._originalFormat)
+			{
+				memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
+			}
+			else
+			{
+				for (size_t i = 0; i < win->_mat._rows; i++)
+				{
+					memcpy(buffer + i * win->_mat._cols * 3, win->_mat._dataPtr + (win->_mat._rows - i - 1) * win->_mat._cols * 3, win->_mat._cols * 3);
+				}
+			}
+			
 		}
 		default:
 			break;
@@ -160,12 +173,12 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 		
 		pArray = new BYTE(uiTotalBytes);
-		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &pArray, NULL, 0);//´´½¨DIB																				  
-		memcpy(pArray, buffer, uiTotalBytes);	//! ½«ÂãÊý¾Ý¸´ÖÆµ½bitmap¹ØÁªµÄÏñËØÇøÓò
+		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &pArray, NULL, 0);//ï¿½ï¿½ï¿½ï¿½DIB																				  
+		memcpy(pArray, buffer, uiTotalBytes);	//! ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¸ï¿½ï¿½Æµï¿½bitmapï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
 
 		SelectObject(hdcmem, hbmp);
-		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //½«ÄÚ´æÖÐµÄÍ¼¿½±´µ½ÆÁÄ»ÉÏ½øÐÐÏÔÊ¾
+		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //ï¿½ï¿½ï¿½Ú´ï¿½ï¿½Ðµï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½Ï½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
 
 		DeleteObject(hbmp);
 		DeleteDC(hdcmem);

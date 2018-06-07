@@ -43,7 +43,7 @@ namespace Simg
 
 	
 	
-	LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);	//ËùÓÐ´°¿ÚÏûÏ¢´¦ÀíÈë¿Ú
+	LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	static HINSTANCE hg_hinstance = 0;
 	
 }
