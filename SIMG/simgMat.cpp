@@ -32,6 +32,50 @@ Mat::Mat(int ncols, int nrows, int datatype)
 
 
 
+Mat Mat::operator+(const Mat & m)
+{
+	assert(_cols == m._cols && _rows == m._rows && _dataType == m._dataType && _dataPtr != NULL && m._dataPtr != NULL);
+
+	Mat ret(_cols, _rows, _dataType);
+	for (int i = 0; i < _matLength * _channels; i++)
+	{
+		ret._dataPtr[i] = MAX(MIN(_dataPtr[i] + m._dataPtr[i], 255),0);
+	}
+	return ret;
+}
+
+Mat Simg::Mat::operator+(const uchar m)
+{
+	Mat ret(_cols, _rows, _dataType);
+	for (int i = 0; i < _matLength * _channels; i++)
+	{
+		ret._dataPtr[i] = MAX(MIN(_dataPtr[i] + m, 255), 0);
+	}
+	return ret;
+}
+
+Mat Simg::Mat::operator-(const Mat & m)
+{
+	assert(_cols == m._cols && _rows == m._rows && _dataType == m._dataType && _dataPtr != NULL && m._dataPtr != NULL);
+
+	Mat ret(_cols, _rows, _dataType);
+	for (int i = 0; i < _matLength * _channels; i++)
+	{
+		ret._dataPtr[i] = MIN(MAX(_dataPtr[i] - m._dataPtr[i], 0), 255);
+	}
+	return ret;
+}
+
+Mat Simg::Mat::operator-(const uchar m)
+{
+	Mat ret(_cols, _rows, _dataType);
+	for (int i = 0; i < _matLength * _channels; i++)
+	{
+		ret._dataPtr[i] = MIN(MAX(_dataPtr[i] - m, 0), 255);
+	}
+	return ret;
+}
+
 uchar * Mat::row(int indRow)
 {
 	if (*_pcount > 1)
@@ -102,27 +146,27 @@ int Mat::init()
 
 	switch (_dataType)
 	{
-	case SIMG_8U:
+	case SIMG_1C8U:
 		_cellLength = 1;
 		_channels = 1;
 		break;
-	case SIMG_8S:
+	case SIMG_1C8S:
 		_cellLength = 1;
 		_channels = 1;
 		break;
-	case SIMG_16U:
+	case SIMG_1C16U:
 		_cellLength = 2;
 		_channels = 1;
 		break;
-	case SIMG_16S:
+	case SIMG_1C16S:
 		_cellLength = 2;
 		_channels = 1;
 		break;
-	case SIMG_32F:
+	case SIMG_1C32F:
 		_cellLength = 4;
 		_channels = 1;
 		break;
-	case SIMG_64F:
+	case SIMG_1C64F:
 		_cellLength = 8;
 		_channels = 1;
 		break;

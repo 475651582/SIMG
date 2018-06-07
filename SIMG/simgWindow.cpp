@@ -114,7 +114,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 	{
 		HDC hdcmem = NULL;
 		HBITMAP hbmp;
-		char* buffer = NULL;	//��ͼbuffer
+		uchar* buffer = NULL;	//��ͼbuffer
 		void *pArray;	//��λͼ�Ļ�ͼbuffer
 		UINT uiTotalBytes;
 		hdc = BeginPaint(hwnd, &ps);
@@ -136,32 +136,46 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		BITMAPINFO bmpInfo; //����λͼ��Ϣ
 		bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		bmpInfo.bmiHeader.biWidth = win->_mat._cols;//���
-		bmpInfo.bmiHeader.biHeight = win->_mat._rows;//�߶�
+		bmpInfo.bmiHeader.biHeight = -win->_mat._rows;//�߶�
 		bmpInfo.bmiHeader.biPlanes = 1;
-		bmpInfo.bmiHeader.biBitCount = 24;
-		bmpInfo.bmiHeader.biCompression = BI_RGB;
+		
 
 		switch (win->_mat._dataType)
 		{
 		case SIMG_3C8U:
 		{
+			bmpInfo.bmiHeader.biBitCount = 24;
+			bmpInfo.bmiHeader.biCompression = BI_RGB;
+			
 			hdcmem = CreateCompatibleDC(hdc);
 			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
-			buffer = new  char[uiTotalBytes];
+			buffer = new  uchar[uiTotalBytes];
 
-			//since we show the pic in bmp format, bmp file don't need to convert, other format of file need to convert.
-			if (SIMG_FORMAT_IMG_BMP == win->_mat._originalFormat)
+			//since we show the pic in bmp format, bmp file don't need to convert, other format of file need to convert.			
+			/*for (size_t i = 0; i < win->_mat._rows; i++)
 			{
-				memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
-			}
-			else
+				memcpy(buffer + i * win->_mat._cols * 3, win->_mat._dataPtr + (win->_mat._rows - i - 1) * win->_mat._cols * 3, win->_mat._cols * 3);
+			}*/
+			memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
+			break;
+		}
+
+		case SIMG_1C8U:
+		{
+			bmpInfo.bmiHeader.biCompression = BI_RGB;
+			bmpInfo.bmiHeader.biBitCount = 24;
+			hdcmem = CreateCompatibleDC(hdc);
+			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			buffer = new  uchar[uiTotalBytes];
+
+			//since we show the pic in bmp format, bmp file don't need to convert, other format of file need to convert.			
+			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
-				for (size_t i = 0; i < win->_mat._rows; i++)
-				{
-					memcpy(buffer + i * win->_mat._cols * 3, win->_mat._dataPtr + (win->_mat._rows - i - 1) * win->_mat._cols * 3, win->_mat._cols * 3);
-				}
+				buffer[3 * i] = (uchar) win->_mat._dataPtr[i];
+				buffer[3 * i + 1] = (uchar)win->_mat._dataPtr[i];
+				buffer[3 * i + 2] = (uchar)win->_mat._dataPtr[i];
 			}
-			
+			break;
 		}
 		default:
 			break;
@@ -178,7 +192,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 
 		SelectObject(hdcmem, hbmp);
-		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //���ڴ��е�ͼ��������Ļ�Ͻ�����ʾ
+		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, -bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //���ڴ��е�ͼ��������Ļ�Ͻ�����ʾ
 
 		DeleteObject(hbmp);
 		DeleteDC(hdcmem);

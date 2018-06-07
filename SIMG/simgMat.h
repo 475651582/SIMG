@@ -8,16 +8,19 @@
 using namespace std;
 typedef unsigned char uchar;
 
+#define MAX(a,b) a>b?a:b
+#define MIN(a,b) a<b?a:b
+
 namespace Simg
 {
 
 
-	const int SIMG_8U = 0x00010001;
-	const int SIMG_8S = 0x00010002;
-	const int SIMG_16U = 0x00010003;
-	const int SIMG_16S = 0x00010004;
-	const int SIMG_32F = 0x00010005;
-	const int SIMG_64F = 0x00010006;
+	const int SIMG_1C8U = 0x00010001;
+	const int SIMG_1C8S = 0x00010002;
+	const int SIMG_1C16U = 0x00010003;
+	const int SIMG_1C16S = 0x00010004;
+	const int SIMG_1C32F = 0x00010005;
+	const int SIMG_1C64F = 0x00010006;
 	const int SIMG_NULL = 0x00010000;
 
 	const int SIMG_3C8U = 0x00010011;
@@ -74,10 +77,19 @@ namespace Simg
 
 			++*_pcount;
 		}
+
+		Mat	operator + (const Mat &m);
+		Mat	operator + (const uchar m);
+
+		Mat	operator - (const Mat &m);
+		Mat	operator - (const uchar m);
+
+
 		uchar* row(int indRow);
 		int rows() { return _rows; };
 		int cols() { return _cols; };
 		int channels() { return _channels; };
+		int datatype() { return _dataType; };
 		~Mat();
 		friend Mat imread(const char* path);
 		uchar* dataPtr();

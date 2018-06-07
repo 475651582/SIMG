@@ -15,6 +15,7 @@ Mat Simg::readBMP(const char *path)
 	BITMAPFILEHEADER bf;					//图像文件头
 	BITMAPINFOHEADER bi;					//图像文件头信息
 	uchar *buf;								//定义文件读取缓冲区
+	RGBQUAD *rgbquad = NULL;
 	int channels = 3;						//默认图像为RGB三通道
 	FILE *fp = fopen(path, "rb");
 	assert(fp != 0);
@@ -39,9 +40,13 @@ Mat Simg::readBMP(const char *path)
 		buf = new uchar[w * h * channels];                //分配缓冲区大小		
 		fread(buf, 1, w * h * channels, fp);                  //开始读取数据
 		ret = Mat(w, h, SIMG_3C8U);
-		memcpy(ret.dataPtr(), buf, w * h * channels);	//copy bmp data to the new Mat
+		uchar* ret_buffer = ret.dataPtr();
+		for (size_t i = 0; i < h; i++)
+		{
+			memcpy(ret_buffer + i * w * channels, buf + (h - i - 1) * w * channels, w * channels);  //copy bmp data to the new Mat, need to convert the direction
+		}
 
-
+		
 		fclose(fp);
 		delete buf; buf = NULL;
 		return ret;
@@ -49,7 +54,23 @@ Mat Simg::readBMP(const char *path)
 	}
 	case 8:		//8位图
 	{
-		//reserved
+		channels = 1;
+		rgbquad = new RGBQUAD[256];
+		fread(rgbquad, sizeof(RGBQUAD), 256, fp);
+
+		buf = new uchar[w * h * channels];                //分配缓冲区大小		
+		fread(buf, 1, w * h * channels, fp);                  //开始读取数据
+		ret = Mat(w, h, SIMG_1C8U);
+		uchar* ret_buffer = ret.dataPtr();
+		for (size_t i = 0; i < h; i++)
+		{
+			memcpy(ret_buffer + i * w * channels, buf + (h - i - 1) * w * channels, w * channels);  //copy bmp data to the new Mat, need to convert the direction
+		}
+
+
+		fclose(fp);
+		delete buf; buf = NULL;
+		delete rgbquad; rgbquad = NULL;
 		return ret;
 		break;
 	}
