@@ -16,7 +16,7 @@ Simg::sWindow::sWindow(const char * winName, int x, int y, int w, int h, int win
 	
 	assert(x >=0 && y >= 0 && w >= 0 && h >= 0);
 	strcpy(_windowName, winName);
-	_x = x; _y = y; _w = w; _h = h;
+	_x = x; _y = y; _w = w; _h = h; _windowStyle = windowStyle;
 	_initialized = false;
 
 	wndclassex = { 0 };
@@ -151,11 +151,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
 			buffer = new  uchar[uiTotalBytes];
 
-			//since we show the pic in bmp format, bmp file don't need to convert, other format of file need to convert.			
-			/*for (size_t i = 0; i < win->_mat._rows; i++)
-			{
-				memcpy(buffer + i * win->_mat._cols * 3, win->_mat._dataPtr + (win->_mat._rows - i - 1) * win->_mat._cols * 3, win->_mat._cols * 3);
-			}*/
+		
 			memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
 			break;
 		}
@@ -168,7 +164,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
 			buffer = new  uchar[uiTotalBytes];
 
-			//since we show the pic in bmp format, bmp file don't need to convert, other format of file need to convert.			
+					
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
 				buffer[3 * i] = (uchar) win->_mat._dataPtr[i];
@@ -192,8 +188,16 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 
 		SelectObject(hdcmem, hbmp);
-		BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, -bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //���ڴ��е�ͼ��������Ļ�Ͻ�����ʾ
-
+		if (SIMG_WINDOW_STYLE_NORMAL == win->_windowStyle)
+		{
+			BitBlt(hdc, 0, 0, bmpInfo.bmiHeader.biWidth, -bmpInfo.bmiHeader.biHeight, hdcmem, 0, 0, SRCCOPY); //���ڴ��е�ͼ��������Ļ�Ͻ�����ʾ
+		}
+		else if (SIMG_WINDOW_STYLE_STRETCH == win->_windowStyle)
+		{
+			StretchBlt(hdc, rect.left, rect.top, rect.right - rect.left + 1, rect.bottom - rect.top + 1, hdcmem, 0, 0, bmpInfo.bmiHeader.biWidth, -bmpInfo.bmiHeader.biHeight, SRCCOPY);
+		}
+		
+		
 		DeleteObject(hbmp);
 		DeleteDC(hdcmem);
 		EndPaint(hwnd, &ps);

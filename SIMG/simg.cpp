@@ -146,7 +146,7 @@ int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, in
 			return -1;
 		}
 	}
-	sWindow win(windowName, x, y, w, h);
+	sWindow win(windowName, x, y, w, h, windowStyle);
 	
 	windowsList.push_back(win);
 

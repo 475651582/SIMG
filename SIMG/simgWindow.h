@@ -19,7 +19,7 @@ namespace Simg
 	{
 	public:
 		sWindow();
-		sWindow(const char* winName, int x = 0, int y = 0, int w = 0, int h = 0, int windowStyle = 0);
+		sWindow(const char* winName, int x = 0, int y = 0, int w = 0, int h = 0, int windowStyle = SIMG_WINDOW_STYLE_NORMAL);
 		void resize(int w = 0, int h = 0);
 		~sWindow();
 		char* windowName() { return _windowName; };
@@ -30,6 +30,7 @@ namespace Simg
 	private:
 		char _windowName[MAX_WINDOW_NAME];	//window name and id (they are the same)
 		int _x, _y, _w, _h;	//location and size of the window
+		int _windowStyle;
 		
 		bool _initialized;	//if the Mat data is assigned to the window, this value should be true, otherwise is false
 		Mat _mat;			//assigned mat
