@@ -5,6 +5,7 @@
 #include <string>
 #include<windows.h>
 
+
 using namespace std;
 typedef unsigned char uchar;
 
@@ -92,10 +93,18 @@ namespace Simg
 		int datatype() { return _dataType; };
 		~Mat();
 		friend Mat imread(const char* path);
+		friend void split(Mat src, Mat* dst);
 		uchar* dataPtr();
+
+		Mat convertTo(int datatype);
+		bool isEmpty() { return NULL == _dataPtr; };
 
 		friend class sWindow;
 		friend LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+
+		friend void rgb2gray(Mat &src, Mat &dst, int methods);
+		friend void rgb2lab(Mat &src, Mat &dst, int methods);
 
 	private:
 

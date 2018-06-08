@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "simgMat.h"
+#include "imgprocess.h"
 
 using namespace Simg;
 Mat::Mat()
@@ -115,6 +116,27 @@ uchar * Mat::dataPtr()
 
 	return _dataPtr;
 }
+
+Mat Simg::Mat::convertTo(int datatype)
+{
+	Mat ret;
+	switch (datatype)
+	{
+	case SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD:
+		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD);
+		break;
+	case SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE:
+		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE);
+		break;
+	case SIMG_METHOD_CONVERT_RGB2LAB_STANDARD:
+		rgb2lab(*this, ret, SIMG_METHOD_CONVERT_RGB2LAB_STANDARD);
+		break;
+	default:
+		break;
+	}
+	return ret;
+}
+
 
 
 

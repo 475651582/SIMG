@@ -96,6 +96,45 @@ Mat Simg::readJPG(const char * path)
 	return ret;
 }
 
+void Simg::split(Mat src, Mat * dst)
+{
+	assert(src._channels > 1 && dst != NULL);
+	int newDataType = 0;
+	switch (src._dataType)
+	{
+	case SIMG_3C8U:
+		newDataType = SIMG_1C8U;
+		break;
+	case SIMG_3C8S:
+		newDataType = SIMG_1C8S;
+		break;
+	case SIMG_3C16U:
+		newDataType = SIMG_1C16U;
+		break;
+	case SIMG_3C16S:
+		newDataType = SIMG_1C16S;
+		break;
+	case SIMG_3C32F:
+		newDataType = SIMG_1C32F;
+		break;
+	case SIMG_3C64F:
+		newDataType = SIMG_1C64F;
+		break;
+	default:
+		break;
+	}
+	
+	for (size_t ch = 0; ch < src._channels; ch++)
+	{
+		dst[ch] = Mat(src._cols, src._rows, newDataType);
+		for (size_t i = 0; i < src._cols * src._rows; i++)
+		{
+			dst[ch]._dataPtr[i] = src._dataPtr[src._channels * i + ch];
+		}
+	}
+	return;
+}
+
 
 Mat Simg::imread(const char* path)
 {
