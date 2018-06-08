@@ -6,7 +6,19 @@ inline float gamma(float x)
 {
 	return x>0.04045 ? pow((x + 0.055f) / 1.055f, 2.4f) : x / 12.92;
 };
-
+void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, int &directNum)
+{
+	directArray[0] = 0;
+	directArray[1] = -1;
+	directArray[2] = 1;
+	directArray[3] = -src.cols();
+	directArray[4] = src.cols();
+	directArray[5] = 1 - src.cols();
+	directArray[6] = 1 + src.cols();
+	directArray[7] = -1 - src.cols();
+	directArray[8] = -1 + src.cols();
+	directNum = 9;
+}
 
 void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 {
@@ -84,4 +96,35 @@ void Simg::rgb2lab_pixel_standard(uchar r, uchar g, uchar b, uchar & lab_l, ucha
 	lab_l = (uchar)(Y > 0.008856f ? (116.0f * FY - 16.0f) : (903.3f * Y));
 	lab_a = (uchar)(500.f * (FX - FY) + 127) ;
 	lab_b = (uchar)(200.f * (FY - FZ) + 127) ;
+}
+
+
+void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
+{
+	assert(!src.isEmpty() && !kernel.isEmpty());
+	dst = src;
+
+	if (1 == src.channels()) //consider single channel image first.
+	{
+		int directArray[9];
+		uchar *src_buffer = src.dataPtr();
+		uchar *dst_buffer = dst.dataPtr();
+
+		int x = 0, y = 0, directNum = 0;
+		convertMorphyKernel(kernel, src, directArray, directNum);
+		for (size_t i = 0; i < src.cols()*src.rows(); i++)
+		{
+			x = i % src.cols();
+			y = i / src.cols();
+			
+			if (0 == x || 0 == y || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
+			uchar max_neighbor = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				uchar neighbor = src_buffer[i + directArray[j]];
+				max_neighbor = MAX(neighbor, max_neighbor);
+			}
+			dst_buffer[i] = max_neighbor;
+		}
+	}
 }
