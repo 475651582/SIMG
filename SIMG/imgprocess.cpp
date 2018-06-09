@@ -148,3 +148,36 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 		delete directArray; directArray = NULL;
 	}
 }
+
+void Simg::erode(Mat & src, Mat & dst, Mat kernel)
+{
+	assert(!src.isEmpty() && !kernel.isEmpty());
+	dst = src;
+
+	if (1 == src.channels()) //consider single channel image first.
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		uchar *src_buffer = src.dataPtr();
+		uchar *dst_buffer = dst.dataPtr();
+
+		int x = 0, y = 0, directNum = 0;
+		convertMorphyKernel(kernel, src, directArray, directNum);
+		for (size_t i = 0; i < src.cols()*src.rows(); i++)
+		{
+
+			uchar min_neighbor = 255;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (0 == x || 0 == y || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
+				uchar neighbor = src_buffer[index];
+				min_neighbor = MIN(neighbor, min_neighbor);
+			}
+			dst_buffer[i] = min_neighbor;
+		}
+
+		delete directArray; directArray = NULL;
+	}
+}
