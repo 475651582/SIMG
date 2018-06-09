@@ -8,7 +8,24 @@ inline float gamma(float x)
 };
 void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, int &directNum)
 {
-	directArray[0] = 0;
+	assert(!Kernel.isEmpty() && Kernel.cols() % 2 != 0 && Kernel.rows() % 2 != 0);
+	int kernelLength = Kernel.cols() * Kernel.rows();
+	uchar *kernel_buffer = Kernel.dataPtr();
+	int anchorPointX = Kernel.cols() / 2;
+	int anchorPointY = Kernel.rows() / 2;
+	directNum = 0;
+	for (size_t i = 0; i < kernelLength; i++)
+	{
+		if (kernel_buffer[i] != 0)
+		{
+			int x = i % Kernel.cols();
+			int y = i / Kernel.cols();
+			int direct = (x - anchorPointX) + (y - anchorPointY) * src.cols();
+			directArray[directNum++] = direct;
+		}
+	}
+
+	/*directArray[0] = 0;
 	directArray[1] = -1;
 	directArray[2] = 1;
 	directArray[3] = -src.cols();
@@ -17,7 +34,7 @@ void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, int &directNum)
 	directArray[6] = 1 + src.cols();
 	directArray[7] = -1 - src.cols();
 	directArray[8] = -1 + src.cols();
-	directNum = 9;
+	directNum = 9;*/
 }
 
 void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
@@ -106,7 +123,7 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 
 	if (1 == src.channels()) //consider single channel image first.
 	{
-		int directArray[9];
+		int *directArray = new int[kernel.cols()*kernel.rows()];
 		uchar *src_buffer = src.dataPtr();
 		uchar *dst_buffer = dst.dataPtr();
 
@@ -114,17 +131,20 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 		convertMorphyKernel(kernel, src, directArray, directNum);
 		for (size_t i = 0; i < src.cols()*src.rows(); i++)
 		{
-			x = i % src.cols();
-			y = i / src.cols();
 			
-			if (0 == x || 0 == y || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
 			uchar max_neighbor = 0;
 			for (size_t j = 0; j < directNum; j++)
 			{
-				uchar neighbor = src_buffer[i + directArray[j]];
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (0 == x || 0 == y || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
+				uchar neighbor = src_buffer[index];
 				max_neighbor = MAX(neighbor, max_neighbor);
 			}
 			dst_buffer[i] = max_neighbor;
 		}
+
+		delete directArray; directArray = NULL;
 	}
 }
