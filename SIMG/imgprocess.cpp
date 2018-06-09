@@ -138,7 +138,7 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 				int index = i + directArray[j];
 				x = index % src.cols();
 				y = index / src.cols();
-				if (0 == x || 0 == y || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
 				uchar neighbor = src_buffer[index];
 				max_neighbor = MAX(neighbor, max_neighbor);
 			}
@@ -171,7 +171,7 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 				int index = i + directArray[j];
 				x = index % src.cols();
 				y = index / src.cols();
-				if (0 == x || 0 == y || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
 				uchar neighbor = src_buffer[index];
 				min_neighbor = MIN(neighbor, min_neighbor);
 			}
