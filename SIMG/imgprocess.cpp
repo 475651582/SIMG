@@ -119,12 +119,13 @@ void Simg::rgb2lab_pixel_standard(uchar r, uchar g, uchar b, uchar & lab_l, ucha
 void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 {
 	assert(!src.isEmpty() && !kernel.isEmpty());
-	dst = src;
+	Mat _src = src;
 
 	if (1 == src.channels()) //consider single channel image first.
 	{
+		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
 		int *directArray = new int[kernel.cols()*kernel.rows()];
-		uchar *src_buffer = src.dataPtr();
+		uchar *src_buffer = _src.dataPtr();
 		uchar *dst_buffer = dst.dataPtr();
 
 		int x = 0, y = 0, directNum = 0;
@@ -152,12 +153,13 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 {
 	assert(!src.isEmpty() && !kernel.isEmpty());
-	dst = src;
+	Mat _src = src;
 
 	if (1 == src.channels()) //consider single channel image first.
 	{
-		int *directArray = new int[kernel.cols()*kernel.rows()];
-		uchar *src_buffer = src.dataPtr();
+		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
+		int *directArray = new int[kernel.cols()*kernel.rows()];		
+		uchar *src_buffer =_src.dataPtr();
 		uchar *dst_buffer = dst.dataPtr();
 
 		int x = 0, y = 0, directNum = 0;

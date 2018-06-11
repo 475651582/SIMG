@@ -48,12 +48,23 @@ namespace Simg
 			// TODO: 在此处插入 return 语句
 			if (this == &m)
 				return *this;
+			if (--*_pcount==0)
+			{
+				_cols = 0;
+				_rows = 0;
+				_dataType = SIMG_NULL;
 
+				delete _dataPtr;
+				delete _pcount;
+				_dataPtr = NULL;
+				_pcount = NULL;
+			}
 
 			this->_cols = m._cols;
 			this->_rows = m._rows;
 			this->_dataType = m._dataType;
 			this->_dataPtr = m._dataPtr;
+			this->_pcount = m._pcount;
 			_originalFormat = m._originalFormat;
 
 			this->init();
@@ -67,6 +78,7 @@ namespace Simg
 		{
 			if (this == &m)
 				return;
+			
 			_pcount = m._pcount;
 			_cols = m._cols;
 			_rows = m._rows;
