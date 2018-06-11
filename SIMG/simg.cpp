@@ -15,7 +15,7 @@ Mat Simg::readBMP(const char *path)
 	BITMAPFILEHEADER bf;					//图像文件头
 	BITMAPINFOHEADER bi;					//图像文件头信息
 	uchar *buf;								//定义文件读取缓冲区
-	RGBQUAD *rgbquad = NULL;
+	RGBQUAD *rgbQuad = NULL;
 	int channels = 3;						//默认图像为RGB三通道
 	FILE *fp = fopen(path, "rb");
 	assert(fp != 0);
@@ -40,10 +40,10 @@ Mat Simg::readBMP(const char *path)
 		buf = new uchar[w * h * channels];                //分配缓冲区大小		
 		fread(buf, 1, w * h * channels, fp);                  //开始读取数据
 		ret = Mat(w, h, SIMG_3C8U);
-		uchar* ret_buffer = ret.dataPtr();
+		uchar* retBuffer = ret.dataPtr();
 		for (size_t i = 0; i < h; i++)
 		{
-			memcpy(ret_buffer + i * w * channels, buf + (h - i - 1) * w * channels, w * channels);  //copy bmp data to the new Mat, need to convert the direction
+			memcpy(retBuffer + i * w * channels, buf + (h - i - 1) * w * channels, w * channels);  //copy bmp data to the new Mat, need to convert the direction
 		}
 
 		
@@ -55,8 +55,8 @@ Mat Simg::readBMP(const char *path)
 	case 8:		//8位图
 	{
 		channels = 1;
-		rgbquad = new RGBQUAD[256];
-		fread(rgbquad, sizeof(RGBQUAD), 256, fp);
+		rgbQuad = new RGBQUAD[256];
+		fread(rgbQuad, sizeof(RGBQUAD), 256, fp);
 
 		buf = new uchar[w * h * channels];                //分配缓冲区大小		
 		fread(buf, 1, w * h * channels, fp);                  //开始读取数据
@@ -70,7 +70,7 @@ Mat Simg::readBMP(const char *path)
 
 		fclose(fp);
 		delete buf; buf = NULL;
-		delete rgbquad; rgbquad = NULL;
+		delete rgbQuad; rgbQuad = NULL;
 		return ret;
 		break;
 	}
@@ -124,10 +124,10 @@ void Simg::split(Mat src, Mat * dst)
 		break;
 	}
 	
-	for (size_t ch = 0; ch < src._channels; ch++)
+	for (int ch = 0; ch < src._channels; ch++)
 	{
 		dst[ch] = Mat(src._cols, src._rows, newDataType);
-		for (size_t i = 0; i < src._cols * src._rows; i++)
+		for (int i = 0; i < src._cols * src._rows; i++)
 		{
 			dst[ch]._dataPtr[i] = src._dataPtr[src._channels * i + ch];
 		}
@@ -145,8 +145,8 @@ Mat Simg::imread(const char* path)
 
 	//提取后缀名
 	s_path = path;
-	int ind_suffix = s_path.rfind('.');
-	string suffix = s_path.substr(ind_suffix + 1, s_path.length());
+	int indexSuffix = s_path.rfind('.');
+	string suffix = s_path.substr(indexSuffix + 1, s_path.length());
 
 	if ("bmp" == suffix)
 	{

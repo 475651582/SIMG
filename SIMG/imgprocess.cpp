@@ -4,19 +4,19 @@
 using namespace Simg;
 inline float gamma(float x)
 {
-	return x>0.04045 ? pow((x + 0.055f) / 1.055f, 2.4f) : x / 12.92;
+	return x>0.04045f ? pow((x + 0.055f) / 1.055f, 2.4f) : x / 12.92f;
 };
-void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, int &directNum)
+void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, size_t &directNum)
 {
 	assert(!Kernel.isEmpty() && Kernel.cols() % 2 != 0 && Kernel.rows() % 2 != 0);
-	int kernelLength = Kernel.cols() * Kernel.rows();
-	uchar *kernel_buffer = Kernel.dataPtr();
+	size_t kernelLength = Kernel.cols() * Kernel.rows();
+	uchar *kernelBuffer = Kernel.dataPtr();
 	int anchorPointX = Kernel.cols() / 2;
 	int anchorPointY = Kernel.rows() / 2;
 	directNum = 0;
 	for (size_t i = 0; i < kernelLength; i++)
 	{
-		if (kernel_buffer[i] != 0)
+		if (kernelBuffer[i] != 0)
 		{
 			int x = i % Kernel.cols();
 			int y = i / Kernel.cols();
@@ -43,33 +43,33 @@ void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 	assert(!src.isEmpty() && src.channels() == 3);
 
 	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
-	uchar *src_buffer = src.dataPtr();
-	uchar *dst_buffer = dst.dataPtr();
+	uchar *srcBuffer = src.dataPtr();
+	uchar *dstBuffer = dst.dataPtr();
 
-	float weight_b = 0, weight_g = 0, weight_r = 0;
+	float weightB = 0, weightG = 0, weightR = 0;
 
 	switch (methods)
 	{
 	case SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD:
 		// Rec.ITU-R BT.601-7 
-		weight_b = 0.1140; weight_g = 0.5870; weight_r = 0.2989;
+		weightB = 0.1140f; weightG = 0.5870f; weightR = 0.2989f;
 		break;
 	case SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE:
 		// Averaging the weight of each channel
-		weight_b = 0.3333; weight_g = 0.3333; weight_r = 0.3333;
+		weightB = 0.3333f; weightG = 0.3333f; weightR = 0.3333f;
 		break;
 	default:
 		// Averaging the weight of each channel
-		weight_b = 0.3333; weight_g = 0.3333; weight_r = 0.3333;
+		weightB = 0.3333f; weightG = 0.3333f; weightR = 0.3333f;
 		break;
 	}
-	for (size_t i = 0; i < src.cols() * src.rows(); i++)
+	for (int i = 0; i < src.cols() * src.rows(); i++)
 	{
-		uchar b = src_buffer[3 * i];
-		uchar g = src_buffer[3 * i + 1];
-		uchar r = src_buffer[3 * i + 2];
-		uchar gray = (uchar)(b * weight_b + g * weight_g + r * weight_r);
-		dst_buffer[i] = gray;
+		uchar b = srcBuffer[3 * i];
+		uchar g = srcBuffer[3 * i + 1];
+		uchar r = srcBuffer[3 * i + 2];
+		uchar gray = (uchar)(b * weightB + g * weightG + r * weightR);
+		dstBuffer[i] = gray;
 	}
 }
 
@@ -77,35 +77,35 @@ void Simg::rgb2lab(Mat & src, Mat & dst, int methods)
 {
 	assert(!src.isEmpty() && src.channels() == 3);
 	dst = Mat(src.cols(), src.rows(), SIMG_3C8U);
-	uchar *src_buffer = src.dataPtr();
-	uchar *dst_buffer = dst.dataPtr();
+	uchar *srcBuffer = src.dataPtr();
+	uchar *dstBuffer = dst.dataPtr();
 	uchar b = 0, g = 0, r = 0, lab_l = 0, lab_a = 0, lab_b = 0;
-	for (size_t i = 0; i < src.cols() * src.rows(); i++)
+	for (int i = 0; i < src.cols() * src.rows(); i++)
 	{
-		b = src_buffer[3 * i];
-		g = src_buffer[3 * i + 1];
-		r = src_buffer[3 * i + 2];
+		b = srcBuffer[3 * i];
+		g = srcBuffer[3 * i + 1];
+		r = srcBuffer[3 * i + 2];
 
-		rgb2lab_pixel_standard(r, g, b, lab_l, lab_a, lab_b);
+		rgb2lab_pixelStandard(r, g, b, lab_l, lab_a, lab_b);
 
-		dst_buffer[3 * i] = lab_l;
-		dst_buffer[3 * i + 1] = lab_a;
-		dst_buffer[3 * i + 2] = lab_b;
+		dstBuffer[3 * i] = lab_l;
+		dstBuffer[3 * i + 1] = lab_a;
+		dstBuffer[3 * i + 2] = lab_b;
 	}
 }
 
-void Simg::rgb2lab_pixel_standard(uchar r, uchar g, uchar b, uchar & lab_l, uchar & lab_a, uchar & lab_b)
+void Simg::rgb2lab_pixelStandard(uchar r, uchar g, uchar b, uchar & lab_l, uchar & lab_a, uchar & lab_b)
 {
 	float B = gamma(b / 255.0f);
 	float G = gamma(g / 255.0f);
 	float R = gamma(r / 255.0f);
-	float X = 0.412453*R + 0.357580*G + 0.180423*B;
-	float Y = 0.212671*R + 0.715160*G + 0.072169*B;
-	float Z = 0.019334*R + 0.119193*G + 0.950227*B;
+	float X = 0.412453f*R + 0.357580f*G + 0.180423f*B;
+	float Y = 0.212671f*R + 0.715160f*G + 0.072169f*B;
+	float Z = 0.019334f*R + 0.119193f*G + 0.950227f*B;
 
-	X /= 0.95047;
-	Y /= 1.0;
-	Z /= 1.08883;
+	X /= 0.95047f;
+	Y /= 1.0f;
+	Z /= 1.08883f;
 
 	float FX = X > 0.008856f ? pow(X, 1.0f / 3.0f) : (7.787f * X + 0.137931f);
 	float FY = Y > 0.008856f ? pow(Y, 1.0f / 3.0f) : (7.787f * Y + 0.137931f);
@@ -125,12 +125,13 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 	{
 		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
 		int *directArray = new int[kernel.cols()*kernel.rows()];
-		uchar *src_buffer = _src.dataPtr();
-		uchar *dst_buffer = dst.dataPtr();
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
 
-		int x = 0, y = 0, directNum = 0;
+		int x = 0, y = 0;
+		size_t directNum = 0;
 		convertMorphyKernel(kernel, src, directArray, directNum);
-		for (size_t i = 0; i < src.cols()*src.rows(); i++)
+		for (int i = 0; i < src.cols()*src.rows(); i++)
 		{
 			
 			uchar max_neighbor = 0;
@@ -140,10 +141,10 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 				x = index % src.cols();
 				y = index / src.cols();
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
-				uchar neighbor = src_buffer[index];
+				uchar neighbor = srcBuffer[index];
 				max_neighbor = MAX(neighbor, max_neighbor);
 			}
-			dst_buffer[i] = max_neighbor;
+			dstBuffer[i] = max_neighbor;
 		}
 
 		delete directArray; directArray = NULL;
@@ -159,12 +160,13 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 	{
 		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
 		int *directArray = new int[kernel.cols()*kernel.rows()];		
-		uchar *src_buffer =_src.dataPtr();
-		uchar *dst_buffer = dst.dataPtr();
+		uchar *srcBuffer =_src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
 
-		int x = 0, y = 0, directNum = 0;
+		int x = 0, y = 0;
+		size_t directNum = 0;
 		convertMorphyKernel(kernel, src, directArray, directNum);
-		for (size_t i = 0; i < src.cols()*src.rows(); i++)
+		for (int i = 0; i < src.cols()*src.rows(); i++)
 		{
 
 			uchar min_neighbor = 255;
@@ -174,10 +176,10 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 				x = index % src.cols();
 				y = index / src.cols();
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
-				uchar neighbor = src_buffer[index];
+				uchar neighbor = srcBuffer[index];
 				min_neighbor = MIN(neighbor, min_neighbor);
 			}
-			dst_buffer[i] = min_neighbor;
+			dstBuffer[i] = min_neighbor;
 		}
 
 		delete directArray; directArray = NULL;

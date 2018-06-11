@@ -114,9 +114,9 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 	{
 		HDC hdcmem = NULL;
 		HBITMAP hbmp;
-		uchar* buffer = NULL;	//��ͼbuffer
-		void *pArray;	//��λͼ�Ļ�ͼbuffer
-		UINT uiTotalBytes;
+		uchar* matBuffer = NULL;	//tmp buffer for reasssigning the mat data
+		void *DIBArray;	//buffer for DIB
+		UINT DIBTotalBytes;
 		hdc = BeginPaint(hwnd, &ps);
 		//����mat
 		//����windowsList��Ѱ�ұ�����Ĵ���ID
@@ -148,11 +148,11 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
 			
 			hdcmem = CreateCompatibleDC(hdc);
-			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
-			buffer = new  uchar[uiTotalBytes];
+			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			matBuffer = new  uchar[DIBTotalBytes];
 
 		
-			memcpy(buffer, win->_mat._dataPtr, uiTotalBytes);
+			memcpy(matBuffer, win->_mat._dataPtr, DIBTotalBytes);
 			break;
 		}
 
@@ -161,15 +161,15 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
 			bmpInfo.bmiHeader.biBitCount = 24;
 			hdcmem = CreateCompatibleDC(hdc);
-			uiTotalBytes = win->_mat._rows * win->_mat._cols * 3;
-			buffer = new  uchar[uiTotalBytes];
+			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			matBuffer = new  uchar[DIBTotalBytes];
 
 					
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
-				buffer[3 * i] = (uchar) win->_mat._dataPtr[i];
-				buffer[3 * i + 1] = (uchar)win->_mat._dataPtr[i];
-				buffer[3 * i + 2] = (uchar)win->_mat._dataPtr[i];
+				matBuffer[3 * i] = (uchar) win->_mat._dataPtr[i];
+				matBuffer[3 * i + 1] = (uchar)win->_mat._dataPtr[i];
+				matBuffer[3 * i + 2] = (uchar)win->_mat._dataPtr[i];
 			}
 			break;
 		}
@@ -182,9 +182,9 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 
 		
-		pArray = new BYTE(uiTotalBytes);
-		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &pArray, NULL, 0);//����DIB																				  
-		memcpy(pArray, buffer, uiTotalBytes);	//! �������ݸ��Ƶ�bitmap��������������
+		DIBArray = new BYTE(DIBTotalBytes);
+		hbmp = CreateDIBSection(NULL, &bmpInfo, DIB_RGB_COLORS, &DIBArray, NULL, 0);//����DIB																				  
+		memcpy(DIBArray, matBuffer, DIBTotalBytes);	//! �������ݸ��Ƶ�bitmap��������������
 
 
 		SelectObject(hdcmem, hbmp);
@@ -202,8 +202,8 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		DeleteDC(hdcmem);
 		EndPaint(hwnd, &ps);
 
-		delete buffer, pArray;
-		buffer = NULL; pArray = NULL;
+		delete matBuffer, DIBArray;
+		matBuffer = NULL; DIBArray = NULL;
 		return (0);
 	}
 	
