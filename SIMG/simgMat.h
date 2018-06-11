@@ -37,6 +37,10 @@ namespace Simg
 	const int SIMG_FORMAT_IMG_PNG = 0x00020003;
 
 
+	struct BGR
+	{
+		uchar b, g, r;
+	};
 
 	class Mat
 	{
@@ -98,11 +102,16 @@ namespace Simg
 		Mat	operator - (const uchar m);
 
 
-		uchar* row(int indRow);
+		uchar* row(int indRow);	//reserved!
 		int rows() { return _rows; };
 		int cols() { return _cols; };
 		int channels() { return _channels; };
 		int datatype() { return _dataType; };
+		void setPixel(int col, int row, uchar data);	//set pixel to assigned value(single channel only)
+		Mat setTo(uchar data);	//set whole image to assigned value (single channel only)
+		void setPixel(int col, int row, uchar ch1, uchar ch2, uchar ch3); //set pixel to assigned value(3 channel only)
+		Mat setTo(uchar ch1, uchar ch2, uchar ch3);	//set whole image to assigned value (3 channel only)
+
 		~Mat();
 
 		uchar* dataPtr();

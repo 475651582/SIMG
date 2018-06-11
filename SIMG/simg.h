@@ -6,6 +6,7 @@
 
 namespace Simg
 {
+	
 	Mat imread(const char *path);
 	Mat readBMP(const char *path);
 	Mat readJPG(const char *path);

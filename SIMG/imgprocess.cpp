@@ -185,3 +185,72 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 		delete directArray; directArray = NULL;
 	}
 }
+
+Mat Simg::getMorphStructor(int cols, int rows, int structorType)
+{
+	Mat ret(cols, rows, SIMG_1C8U);
+	int anchorPointX = cols / 2;
+	int anchorPointY = rows / 2;
+	switch (structorType)
+	{
+	case SIMG_MORPH_CIRCLE:
+	{
+		int radius2 = (MIN(cols, rows) / 2) * (MIN(cols, rows) / 2);
+		for (int x = 0; x < cols; x++)
+			for (int y = 0; y < rows; y++)
+			{
+				int r2 = (x - anchorPointX)*(x - anchorPointX) + (y - anchorPointY)*(y - anchorPointY);
+				if (r2 <= radius2)
+				{
+					ret.setPixel(x, y, 1);
+				}
+				else
+				{
+					ret.setPixel(x, y, 0);
+				}
+			}
+		break;
+	}
+		
+	case SIMG_MORPH_DIAMOND:
+		for (int x = 0; x < cols; x++)
+		for (int y = 0; y < rows; y++)
+		{
+			int l2 = abs(x - anchorPointX) + abs(y - anchorPointY);
+			if (l2 <= (MIN(cols,rows) / 2))
+			{
+				ret.setPixel(x, y, 1);
+			}
+			else
+			{
+				ret.setPixel(x, y, 0);
+			}
+		}
+		break;
+	case SIMG_MORPH_CROSS:
+		for (int x = 0; x < cols; x++)
+		for (int y = 0; y < rows; y++)
+		{
+			if (x == (MIN(cols, rows) / 2) || y == (MIN(cols, rows) / 2))
+			{
+				ret.setPixel(x, y, 1);
+			}
+			else
+			{
+				ret.setPixel(x, y, 0);
+			}
+		}
+		break;
+	case SIMG_MORPH_RECTANGLE:
+		for (int x = 0; x < cols; x++)
+		for (int y = 0; y < rows; y++)
+		{
+			ret.setPixel(x, y, 1);
+		}
+		break;
+	default:
+		break;
+	}
+
+	return ret;
+}

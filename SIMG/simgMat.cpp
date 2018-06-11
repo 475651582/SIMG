@@ -2,6 +2,7 @@
 #include "simgMat.h"
 #include "imgprocess.h"
 
+
 using namespace Simg;
 Mat::Mat()
 {
@@ -26,6 +27,7 @@ Mat::Mat(int ncols, int nrows, int datatype)
 	init();
 
 	_dataPtr = new uchar[_dataLength];
+	memset(_dataPtr, 0, _dataLength);
 	_pcount = new size_t(1);
 }
 
@@ -79,26 +81,26 @@ Mat Simg::Mat::operator-(const uchar m)
 
 uchar * Mat::row(int indRow)
 {
-	if (*_pcount > 1)
-	{
-		*_pcount--;
-		//////allocate new ptr and memory for dst mat
-		size_t* tmpPcount = new size_t(1);
-		uchar* tmpDataPtr = new uchar[_dataLength];
-		memcpy(tmpDataPtr, _dataPtr, _dataLength);
-		_dataPtr = tmpDataPtr;
-		_pcount = tmpPcount;
-	}
-	if (SIMG_FORMAT_IMG_BMP == _originalFormat)
-	{
-		//bmp format start from lowerleft pixel
-		return _dataPtr + _colDataLength * (_rows - indRow - 1);
-	}
-	else
-	{
-		return _dataPtr + _colDataLength * indRow;
-	}
-
+	//if (*_pcount > 1)
+	//{
+	//	*_pcount--;
+	//	//////allocate new ptr and memory for dst mat
+	//	size_t* tmpPcount = new size_t(1);
+	//	uchar* tmpDataPtr = new uchar[_dataLength];
+	//	memcpy(tmpDataPtr, _dataPtr, _dataLength);
+	//	_dataPtr = tmpDataPtr;
+	//	_pcount = tmpPcount;
+	//}
+	//if (SIMG_FORMAT_IMG_BMP == _originalFormat)
+	//{
+	//	//bmp format start from lowerleft pixel
+	//	return _dataPtr + _colDataLength * (_rows - indRow - 1);
+	//}
+	//else
+	//{
+	//	return _dataPtr + _colDataLength * indRow;
+	//}
+	return nullptr;
 }
 
 uchar * Mat::dataPtr()
@@ -141,6 +143,65 @@ Mat Simg::Mat::convertTo(int datatype)
 
 
 
+
+void Simg::Mat::setPixel(int col, int row, uchar data)
+{
+	assert(col >= 0 && col < _cols&&row >= 0 && row < _rows&&_dataPtr != NULL && _channels == 1);
+	if (*_pcount > 1)
+	{
+		*_pcount--;
+		//allocate new ptr and memory for dst mat
+		size_t* tmpPcount = new size_t(1);
+		uchar* tmpDataPtr = new uchar[_dataLength];
+		memcpy(tmpDataPtr, _dataPtr, _dataLength);
+		_dataPtr = tmpDataPtr;
+		_pcount = tmpPcount;
+	}
+	_dataPtr[col * _cellLength + row * _cellLength * _cols] = data;
+}
+
+Mat Simg::Mat::setTo(uchar data)
+{
+	assert(_dataPtr != NULL && _channels == 1);
+	Mat ret(_cols, _rows, _dataType);
+
+	memset(ret._dataPtr, data, ret._dataLength);
+	return ret;
+}
+
+void Simg::Mat::setPixel(int col, int row, uchar ch1, uchar ch2, uchar ch3)
+{
+	assert(col >= 0 && col < _cols&&row >= 0 && row < _rows&&_dataPtr != NULL && _channels == 3);
+	if (*_pcount > 1)
+	{
+		*_pcount--;
+		//allocate new ptr and memory for dst mat
+		size_t* tmpPcount = new size_t(1);
+		uchar* tmpDataPtr = new uchar[_dataLength];
+		memcpy(tmpDataPtr, _dataPtr, _dataLength);
+		_dataPtr = tmpDataPtr;
+		_pcount = tmpPcount;
+	}
+	_dataPtr[col * _cellLength + row * _cellLength * _cols] = ch1;
+	_dataPtr[col * _cellLength + row * _cellLength * _cols + 1] = ch2;
+	_dataPtr[col * _cellLength + row * _cellLength * _cols + 2] = ch3;
+}
+
+Mat Simg::Mat::setTo(uchar ch1, uchar ch2, uchar ch3)
+{
+	
+	assert(_dataPtr != NULL && _channels == 3);
+	Mat ret(_cols, _rows, _dataType);
+
+	for (int i = 0; i < _cols * _rows; i++)
+	{
+		ret._dataPtr[i * ret._channels] = ch1;
+		ret._dataPtr[i * ret._channels + 1] = ch2;
+		ret._dataPtr[i * ret._channels + 2] = ch3;
+	}
+
+	return ret;
+}
 
 Mat::~Mat()
 {
