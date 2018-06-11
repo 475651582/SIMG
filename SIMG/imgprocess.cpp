@@ -208,7 +208,7 @@ int Simg::threshold(Mat & src, Mat & dst, int threshValue, int method, int value
 		case SIMG_METHOD_THRESHOLD_BINARY_INV:
 			for (int i = 0; i < src.cols()*src.rows(); i++)
 			{
-				dstBuffer[i] = srcBuffer[i] > threshValue ? 0 : value;
+				dstBuffer[i] = srcBuffer[i] < threshValue ? value : 0;
 			}
 			return threshValue;
 			break;
