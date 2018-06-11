@@ -118,7 +118,7 @@ void Simg::rgb2lab_pixelStandard(uchar r, uchar g, uchar b, uchar & lab_l, uchar
 
 void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 {
-	assert(!src.isEmpty() && !kernel.isEmpty());
+	assert(!src.isEmpty() && !kernel.isEmpty() && src.channels() == 1);
 	Mat _src = src;
 
 	if (1 == src.channels()) //consider single channel image first.
@@ -153,7 +153,7 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 
 void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 {
-	assert(!src.isEmpty() && !kernel.isEmpty());
+	assert(!src.isEmpty() && !kernel.isEmpty() && src.channels() == 1);
 	Mat _src = src;
 
 	if (1 == src.channels()) //consider single channel image first.
@@ -184,6 +184,42 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 
 		delete directArray; directArray = NULL;
 	}
+}
+
+int Simg::threshold(Mat & src, Mat & dst, int threshValue, int method, int value)
+{
+	assert(!src.isEmpty() && src.channels() == 1);
+	Mat _src = src;
+	if (src.channels() == 1)
+	{
+		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
+
+		switch (method)
+		{
+		case SIMG_METHOD_THRESHOLD_BINARY:
+			for (int i = 0; i < src.cols()*src.rows(); i++)
+			{
+				dstBuffer[i] = srcBuffer[i] > threshValue ? value : 0;
+			}
+			return threshValue;
+			break;
+		case SIMG_METHOD_THRESHOLD_BINARY_INV:
+			for (int i = 0; i < src.cols()*src.rows(); i++)
+			{
+				dstBuffer[i] = srcBuffer[i] > threshValue ? 0 : value;
+			}
+			return threshValue;
+			break;
+		default:
+			break;
+		}
+
+		
+	}
+
+	return 0;
 }
 
 Mat Simg::getMorphStructor(int cols, int rows, int structorType)
