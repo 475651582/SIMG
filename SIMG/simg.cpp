@@ -89,10 +89,24 @@ Mat Simg::readJPG(const char * path)
 	int w = 0, h = 0, comps = 0;
 	int channels = 3;
 	uchar *buf = jpgd::decompress_jpeg_image_from_file(path, &w, &h, &comps, 3);
-	ret = Mat(w, h, SIMG_3C8U);
-	memcpy(ret.dataPtr(), buf, w * h * channels);	//copy bmp data to the new Mat
+	if (3 == comps)
+	{
+		ret = Mat(w, h, SIMG_3C8U);
+		memcpy(ret.dataPtr(), buf, w * h * channels);	//copy bmp data to the new Mat
+		delete buf; buf = NULL;
+	}
+	else
+	{
+		channels = 1;
+		delete buf; buf = NULL;
+		uchar *buf2 = jpgd::decompress_jpeg_image_from_file(path, &w, &h, &comps, 1);
 
-	delete buf; buf = NULL;
+		ret = Mat(w, h, SIMG_1C8U);
+		memcpy(ret.dataPtr(), buf2, w * h * channels);	//copy bmp data to the new Mat
+		delete buf2; buf2 = NULL;
+	}
+	
+	
 	return ret;
 }
 

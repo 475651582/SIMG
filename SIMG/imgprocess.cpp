@@ -195,23 +195,37 @@ int Simg::threshold(Mat & src, Mat & dst, int threshValue, int method, int value
 		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
 		uchar *srcBuffer = _src.dataPtr();
 		uchar *dstBuffer = dst.dataPtr();
+		int threshold = threshValue;
 
 		switch (method)
 		{
 		case SIMG_METHOD_THRESHOLD_BINARY:
 			for (int i = 0; i < src.cols()*src.rows(); i++)
 			{
-				dstBuffer[i] = srcBuffer[i] > threshValue ? value : 0;
+				dstBuffer[i] = srcBuffer[i] > threshold ? value : 0;
 			}
-			return threshValue;
+			return threshold;
 			break;
 		case SIMG_METHOD_THRESHOLD_BINARY_INV:
 			for (int i = 0; i < src.cols()*src.rows(); i++)
 			{
-				dstBuffer[i] = srcBuffer[i] < threshValue ? value : 0;
+				dstBuffer[i] = srcBuffer[i] < threshold ? value : 0;
 			}
-			return threshValue;
+			return threshold;
 			break;
+		case SIMG_METHOD_THRESHOLD_OTSU:
+		{
+			Histogram h(1);
+			calcHistogram(src, h);
+			threshold = h.OtsuThreshold();
+			for (int i = 0; i < src.cols()*src.rows(); i++)
+			{
+				dstBuffer[i] = srcBuffer[i] > threshold ? value : 0;
+			}
+			return threshold;
+			break;
+		}
+			
 		default:
 			break;
 		}
@@ -289,4 +303,145 @@ Mat Simg::getMorphStructor(int cols, int rows, int structorType)
 	}
 
 	return ret;
+}
+
+void Simg::calcHistogram(Mat &src, Histogram &h)
+{
+	assert(!src.isEmpty() && !h.isEmpty());
+	uchar *srcBuffer = src.dataPtr();
+
+	switch (src.channels())
+	{
+	case 1:
+	{
+		h = Histogram(1, src.cols(), src.rows());
+		int *hBuffer = h.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+			uchar p = srcBuffer[i];
+			hBuffer[p]++;
+		}
+		break;
+	}
+		
+	case 3:
+	{
+		h = Histogram(3, src.cols(), src.rows());
+		int *hBuffer = h.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+			uchar b = srcBuffer[3 * i];
+			uchar g = srcBuffer[3 * i + 1];
+			uchar r = srcBuffer[3 * i + 2];
+			hBuffer[b]++;
+			hBuffer[g + 256]++;
+			hBuffer[r + 256 * 2]++;
+		}
+		break;
+	}
+		
+	default:
+		break;
+	}
+	
+	
+}
+
+Histogram::Histogram(int channel, int col, int row)
+{
+	assert(channel == 1 || channel == 3);
+	_channels = channel;
+
+	switch (_channels)
+	{
+	case 1:
+		_dataLength = 256;
+
+		break;
+	case 3:
+		_dataLength = 256 * 3;
+		break;
+	default:
+		_dataLength = 256;
+		break;
+	}
+
+	_cols = col; _rows = row;
+	_dataPtr = new int[_dataLength];
+	memset(_dataPtr, 0, sizeof(int)*_dataLength);
+	_pcount = new size_t(1);
+}
+
+Histogram::~Histogram()
+{
+	if (--*_pcount == 0 && NULL != _dataPtr)
+	{
+		_cols = 0;
+		_rows = 0;
+		delete _dataPtr;
+		delete _pcount;
+		_dataPtr = NULL;
+		_pcount = NULL;
+	}
+}
+
+float Simg::Histogram::average()
+{
+	float mean = 0;
+	switch (_channels)
+	{
+	case 1:
+		for (size_t i = 0; i < 256; i++)
+		{
+			mean += i * _dataPtr[i];
+		}
+		mean /= (_cols * _rows);
+		break;
+	case 3:
+		assert(false && "average for 3 channels is not available currently");
+	default:
+		break;
+	}
+	
+	return mean;
+}
+
+int Simg::Histogram::OtsuThreshold()
+{
+	assert(_channels == 1);
+	float mean = average();
+	float maxVariance = 0;
+	float w0 = 0, avgValue = 0;
+	float size = (float)_cols * _rows;
+	int threshold = 0;
+	for (int i = 0; i < 256; i++)
+	{
+		w0 += _dataPtr[i] / size;
+		avgValue += (i * _dataPtr[i] / size);
+
+		float t = avgValue / w0 - mean;
+		float v = t * t * w0 / (1 - w0);
+		if (v > maxVariance)
+		{
+			maxVariance = v;
+			threshold = i;
+		}
+	}
+	return threshold;
+}
+
+int * Simg::Histogram::dataPtr()
+{
+	if (*_pcount > 1)
+	{
+		*_pcount--;
+		//allocate new ptr and memory for dst mat
+		size_t* tmpPcount = new size_t(1);
+		int* tmpDataPtr = new int[_dataLength];
+		memcpy(tmpDataPtr, _dataPtr, _dataLength);
+		_dataPtr = tmpDataPtr;
+		_pcount = tmpPcount;
+	}
+
+	return _dataPtr;
 }

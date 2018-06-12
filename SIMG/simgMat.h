@@ -5,7 +5,6 @@
 #include <string>
 #include<windows.h>
 
-
 using namespace std;
 typedef unsigned char uchar;
 
@@ -124,7 +123,6 @@ namespace Simg
 
 		friend Mat imread(const char* path);
 		friend void split(Mat src, Mat* dst);
-
 
 	private:
 
