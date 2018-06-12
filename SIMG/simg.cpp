@@ -228,19 +228,28 @@ int Simg::waitKey(int time)
 {
 	MSG  msg;
 	HWND msgHwnd;
-	clock_t start = clock();
+	
 	GetMessage(&msg, NULL, 0, 0);
 	msgHwnd = msg.hwnd;
-	SetTimer(msgHwnd, SIMG_WINDOW_TIMERID, time, TimerProc);
+	if (time > 0)
+	{
+		SetTimer(msgHwnd, SIMG_WINDOW_TIMERID, time, TimerProc);
+	}
+	
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		
-		if (SIMG_WINDOW_MESSAGE_TIMEUP == msg.message)
+		if (SIMG_WINDOW_MESSAGE_TIMEUP == msg.message && time > 0)
 		{
 			KillTimer(msgHwnd, SIMG_WINDOW_TIMERID);
 			break;
 		}
 		TranslateMessage(&msg);
+		if (WM_KEYDOWN == msg.message)
+		{
+			//printf("%d\n", msg.wParam);
+			return msg.wParam;
+		}
 		
 		DispatchMessage(&msg);
 		
