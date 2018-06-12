@@ -14,12 +14,15 @@ namespace Simg
 {
 	const int SIMG_WINDOW_STYLE_NORMAL =	0x00000001;
 	const int SIMG_WINDOW_STYLE_STRETCH =	0x00000002;
+	const int SIMG_WINDOW_MESSAGE_TIMEUP = 0x00010001;
+	const int SIMG_WINDOW_TIMERID = 0x00000001;
 	
 	class sWindow
 	{
 	public:
 		sWindow();
 		sWindow(const char* winName, int x = 0, int y = 0, int w = 0, int h = 0, int windowStyle = SIMG_WINDOW_STYLE_NORMAL);
+		void refresh();
 		void resize(int w = 0, int h = 0);
 		~sWindow();
 		char* windowName() { return _windowName; };

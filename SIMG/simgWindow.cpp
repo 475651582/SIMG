@@ -54,6 +54,11 @@ Simg::sWindow::sWindow(const char * winName, int x, int y, int w, int h, int win
 	
 }
 
+void Simg::sWindow::refresh()
+{
+	InvalidateRect(_hwnd, NULL, false);
+}
+
 void Simg::sWindow::resize(int w, int h)
 {
 	CloseWindow(_hwnd);
@@ -78,6 +83,7 @@ void Simg::sWindow::resize(int w, int h)
 
 Simg::sWindow::~sWindow()
 {
+	
 }
 
 int Simg::sWindow::loadMat(Mat m)
@@ -112,6 +118,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 	case WM_PAINT:
 	{
+		GetClientRect(hwnd, &rect);
 		HDC hdcmem = NULL;
 		HBITMAP hbmp;
 		uchar* matBuffer = NULL;	//tmp buffer for reasssigning the mat data

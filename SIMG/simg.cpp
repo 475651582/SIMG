@@ -5,6 +5,18 @@ using namespace Simg;
 
 std::vector<Simg::sWindow> windowsList;
 
+void   CALLBACK   TimerProc(HWND   hWnd, UINT   nMsg, UINT   nTimerid, DWORD   dwTime)
+{
+	switch (nTimerid)
+	{
+	case SIMG_WINDOW_TIMERID:
+		PostMessage(hWnd, SIMG_WINDOW_MESSAGE_TIMEUP, 0, 0);
+		break;
+	default:
+		break;
+	}
+}
+
 Mat Simg::readBMP(const char *path)
 {
 	//bmp存储方式是以左下角第一个像素为坐标原点的，和通常的使用习惯不太一致，需在索引的时候注意。
@@ -212,13 +224,27 @@ int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, in
 
 
 
-int Simg::waitKey()
+int Simg::waitKey(int time)
 {
 	MSG  msg;
+	HWND msgHwnd;
+	clock_t start = clock();
+	GetMessage(&msg, NULL, 0, 0);
+	msgHwnd = msg.hwnd;
+	SetTimer(msgHwnd, SIMG_WINDOW_TIMERID, time, TimerProc);
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
+		
+		if (SIMG_WINDOW_MESSAGE_TIMEUP == msg.message)
+		{
+			KillTimer(msgHwnd, SIMG_WINDOW_TIMERID);
+			break;
+		}
 		TranslateMessage(&msg);
+		
 		DispatchMessage(&msg);
+		
+		
 	}
 	return 0;
 }
@@ -231,7 +257,9 @@ int Simg::imshow(const char * windowName, Mat img, int windowStyle)
 		sWindow *win = &windowsList[i];
 		if (0 == strcmp(windowName, win->windowName()))
 		{
-			win->loadMat(img);
+			
+			win->loadMat(img);		
+			win->refresh();
 		}
 	}
 
