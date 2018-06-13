@@ -80,24 +80,7 @@ void Simg::sWindow::refresh()
 
 void Simg::sWindow::resize(int w, int h)
 {
-	CloseWindow(_hwnd);
-	_w = w; _h = h;
-	_hwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW,
-		_windowName,
-		_windowName,
-		WS_OVERLAPPEDWINDOW,
-		_x,
-		_y,
-		_w,
-		_h,
-		NULL,
-		NULL,
-		hg_hinstance,
-		NULL);
-
-
-	ShowWindow(_hwnd, 1);
-	UpdateWindow(_hwnd);
+	
 }
 
 Simg::sWindow::~sWindow()
@@ -125,6 +108,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 	PAINTSTRUCT ps;
 	static RECT rect;
 	sWindow *win = NULL;
+	int margin_w = 20, margin_h = 43, margin_x = -10, margin_y = -33;
 	for (size_t i = 0; i < windowsList.size(); i++)
 	{
 		win = &windowsList[i];
@@ -136,6 +120,15 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 	{
 	case WM_SIZE:
 		GetClientRect(hwnd, &rect);
+		win->_w = (int)(short)LOWORD(lParam) + margin_w;
+		win->_h = (int)(short)HIWORD(lParam) + margin_h;
+		return (0);
+
+	case WM_MOVE:
+		GetClientRect(hwnd, &rect);
+		win->_x = LOWORD(lParam) + margin_x;
+		win->_y = HIWORD(lParam) + margin_y;
+
 		return (0);
 
 	case WM_PAINT:
