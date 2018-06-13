@@ -215,9 +215,6 @@ int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, in
 	
 	windowsList.push_back(win);
 
-	std::vector<sWindow> aaa;
-	aaa.push_back(win);
-
 	return 1;
 
 }
@@ -226,6 +223,14 @@ int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, in
 
 int Simg::waitKey(int time)
 {
+	//update every window
+	for (size_t i = 0; i < windowsList.size(); i++)
+	{
+		if (windowsList[i].needRender())
+		{
+			windowsList[i].refresh();
+		}
+	}
 	MSG  msg;
 	HWND msgHwnd;
 	
@@ -267,8 +272,8 @@ int Simg::imshow(const char * windowName, Mat img, int windowStyle)
 		if (0 == strcmp(windowName, win->windowName()))
 		{
 			
-			win->loadMat(img);		
-			win->refresh();
+			win->updateMat(img);		
+			//win->refresh();
 		}
 	}
 

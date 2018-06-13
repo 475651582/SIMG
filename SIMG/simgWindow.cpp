@@ -56,7 +56,26 @@ Simg::sWindow::sWindow(const char * winName, int x, int y, int w, int h, int win
 
 void Simg::sWindow::refresh()
 {
+	bool isVisable = IsWindowVisible(_hwnd);
+	if (!isVisable)
+	{
+		_hwnd = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW,
+			_windowName,
+			_windowName,
+			WS_OVERLAPPEDWINDOW,
+			_x,
+			_y,
+			_w,
+			_h,
+			NULL,
+			NULL,
+			hg_hinstance,
+			NULL);
+	}
+	ShowWindow(_hwnd, 1);
+	UpdateWindow(_hwnd);
 	InvalidateRect(_hwnd, NULL, false);
+	
 }
 
 void Simg::sWindow::resize(int w, int h)
@@ -86,16 +105,13 @@ Simg::sWindow::~sWindow()
 	
 }
 
-int Simg::sWindow::loadMat(Mat m)
+int Simg::sWindow::updateMat(Mat m)
 {
 	assert(NULL != m._dataPtr);
 
 	_mat = Mat(m); 
 	_initialized = true;
-
-	ShowWindow(_hwnd, 1);
-	UpdateWindow(_hwnd);
-
+	_needRender = true;
 	return 0;
 }
 
@@ -108,7 +124,13 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 	HDC hdc;
 	PAINTSTRUCT ps;
 	static RECT rect;
-	
+	sWindow *win = NULL;
+	for (size_t i = 0; i < windowsList.size(); i++)
+	{
+		win = &windowsList[i];
+		if (win->hwnd() == hwnd) break;
+	}
+
 
 	switch (message)
 	{
@@ -127,13 +149,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		hdc = BeginPaint(hwnd, &ps);
 		//����mat
 		//����windowsList��Ѱ�ұ�����Ĵ���ID
-		sWindow *win = NULL;
-		for (size_t i = 0; i < windowsList.size(); i++)
-		{
-			win = &windowsList[i];
-			if (win->hwnd() == hwnd) break;
-		}
-
+		
 		//û�б�����mat�Ĵ��岻���к�������ʾ������loadMat����ʼ����
 		if (!win->_initialized)
 		{
@@ -217,6 +233,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
+		win->_needRender = false;
 		return (0);
 	}
 

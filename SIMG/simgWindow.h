@@ -27,7 +27,8 @@ namespace Simg
 		~sWindow();
 		char* windowName() { return _windowName; };
 		
-		int loadMat(Mat m);		//load mat data to the window for showing
+		int updateMat(Mat m);		//load mat data to the window for showing
+		bool needRender() { return _needRender; };
 		HWND hwnd() { return _hwnd; }
 
 	private:
@@ -36,6 +37,7 @@ namespace Simg
 		int _windowStyle;
 		
 		bool _initialized;	//if the Mat data is assigned to the window, this value should be true, otherwise is false
+		bool _needRender;	//is the window need to be rendered
 		Mat _mat;			//assigned mat
 		HWND _hwnd;			//handle of the window
 		WNDCLASSEX wndclassex;	//some settings of the window
