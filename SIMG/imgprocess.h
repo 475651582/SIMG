@@ -90,9 +90,9 @@ namespace Simg
 
 	void resize(Mat &src, Mat &dst, Size dsize, int method = SIMG_METHOD_RESIZE_NEAREST);
 	
-	void resize_nearest_neighbor_sample_1D(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows);
-	void resize_linear_sample_1D(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows);
-	void resize_linear_sample_1D_fast(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows);
+	void resize_nearest_neighbor_sample(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
+	void resize_linear_sample(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
+	void resize_linear_sample_fast(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
 	
 
 }

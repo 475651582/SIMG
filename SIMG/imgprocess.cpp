@@ -452,7 +452,7 @@ int * Simg::Histogram::dataPtr()
 
 void Simg::resize(Mat & src, Mat & dst, Size dsize, int method)
 {
-	assert(src.channels() == 1); //consider single channel first
+	//assert(src.channels() == 1); //consider single channel first
 	Mat _src = src;	//make a shallow copy in case of the situation of src=dst
 
 	dst = Mat(dsize.x, dsize.y, src.datatype());
@@ -463,20 +463,20 @@ void Simg::resize(Mat & src, Mat & dst, Size dsize, int method)
 	switch (method)
 	{
 	case SIMG_METHOD_RESIZE_NEAREST:
-		resize_nearest_neighbor_sample_1D(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows());
+		resize_nearest_neighbor_sample(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows(), src.channels());
 		break;
 	case SIMG_METHOD_RESIZE_LINEAR:
-		resize_linear_sample_1D(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows());
+		resize_linear_sample(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows(), src.channels());
 		break;
 	case SIMG_METHOD_RESIZE_LINEAR_FAST:
-		resize_linear_sample_1D_fast(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows());
+		resize_linear_sample_fast(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows(), src.channels());
 		break;
 	default:
 		break;
 	}
 }
 
-void Simg::resize_nearest_neighbor_sample_1D(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows)
+void Simg::resize_nearest_neighbor_sample(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows, int channels)
 {
 	float ratioCols = 1.0f * srcCols / dstCols;
 	float ratioRows = 1.0f * srcRows / dstRows;
@@ -486,13 +486,23 @@ void Simg::resize_nearest_neighbor_sample_1D(uchar * srcBuffer, int srcCols, int
 		int y = i / dstCols;
 		int srcX = (int)round(x * ratioCols);
 		int srcY = (int)round(y * ratioRows);
-		dstBuffer[i] = srcBuffer[srcX + srcY * srcCols];
+		if (1 == channels)
+		{
+			dstBuffer[i] = srcBuffer[srcX + srcY * srcCols];
+		}
+		else
+		{
+			dstBuffer[channels * i] = srcBuffer[channels * srcX + channels * srcY * srcCols];
+			dstBuffer[channels * i + 1] = srcBuffer[channels * srcX + channels * srcY * srcCols + 1];
+			dstBuffer[channels * i + 2] = srcBuffer[channels * srcX + channels * srcY * srcCols + 2];
+		}
+		
 	}
 	
 }
 
 
-void Simg::resize_linear_sample_1D(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows)
+void Simg::resize_linear_sample(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows, int channels)
 {
 	float ratioCols = 1.0f * srcCols / dstCols;
 	float ratioRows = 1.0f * srcRows / dstRows;
@@ -509,20 +519,47 @@ void Simg::resize_linear_sample_1D(uchar * srcBuffer, int srcCols, int srcRows, 
 		float u = preciseX - i;
 		float v = preciseY - j;
 		
-		float f_i_j = srcBuffer[i + j * srcCols];
-		float f_i1_j = srcBuffer[i + 1 + j * srcCols];
-		float f_i_j1 = srcBuffer[i  + j * srcCols + srcCols];
-		float f_i1_j1 = srcBuffer[i + 1 + j * srcCols + srcCols];
+		
+		if (1 == channels)
+		{
+			float f_i_j = srcBuffer[i + j * srcCols];
+			float f_i1_j = srcBuffer[i + 1 + j * srcCols];
+			float f_i_j1 = srcBuffer[i + j * srcCols + srcCols];
+			float f_i1_j1 = srcBuffer[i + 1 + j * srcCols + srcCols];
 
-	
+			float f_u_v = (1 - u)*(1 - v)*f_i_j + (1 - u)*v*f_i_j1 + u * (1 - v)*f_i1_j + u * v*f_i1_j1;
+			dstBuffer[n] = (uchar)round(f_u_v);
+		}
+		else
+		{
+			float f_i_j_b = srcBuffer[(i + j * srcCols)*channels];
+			float f_i1_j_b = srcBuffer[(i + 1 + j * srcCols)*channels];
+			float f_i_j1_b = srcBuffer[(i + j * srcCols + srcCols)*channels];
+			float f_i1_j1_b = srcBuffer[(i + 1 + j * srcCols + srcCols)*channels];
+			float f_u_v_b = (1 - u)*(1 - v)*f_i_j_b + (1 - u)*v*f_i_j1_b + u * (1 - v)*f_i1_j_b + u * v*f_i1_j1_b;
 
-		float f_u_v = (1 - u)*(1 - v)*f_i_j + (1 - u)*v*f_i_j1 + u * (1 - v)*f_i1_j + u*v*f_i1_j1;
-		dstBuffer[n] = (uchar) round(f_u_v);
+			float f_i_j_g = srcBuffer[(i + j * srcCols)*channels + 1];
+			float f_i1_j_g = srcBuffer[(i + 1 + j * srcCols)*channels + 1];
+			float f_i_j1_g = srcBuffer[(i + j * srcCols + srcCols)*channels + 1];
+			float f_i1_j1_g = srcBuffer[(i + 1 + j * srcCols + srcCols)*channels + 1];
+			float f_u_v_g = (1 - u)*(1 - v)*f_i_j_g + (1 - u)*v*f_i_j1_g + u * (1 - v)*f_i1_j_g + u * v*f_i1_j1_g;
+
+			float f_i_j_r = srcBuffer[(i + j * srcCols)*channels + 2];
+			float f_i1_j_r = srcBuffer[(i + 1 + j * srcCols)*channels + 2];
+			float f_i_j1_r = srcBuffer[(i + j * srcCols + srcCols)*channels + 2];
+			float f_i1_j1_r = srcBuffer[(i + 1 + j * srcCols + srcCols)*channels + 2];
+			float f_u_v_r = (1 - u)*(1 - v)*f_i_j_r + (1 - u)*v*f_i_j1_r + u * (1 - v)*f_i1_j_r + u * v*f_i1_j1_r;
+
+			dstBuffer[channels * n] = (uchar)round(f_u_v_b);
+			dstBuffer[channels * n + 1] = (uchar)round(f_u_v_g);
+			dstBuffer[channels * n + 2] = (uchar)round(f_u_v_r);
+		}
+		
 	}
 
 }
 
-void Simg::resize_linear_sample_1D_fast(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows)
+void Simg::resize_linear_sample_fast(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows, int channels)
 {
 	
 	for (int n = 0; n < dstCols * dstRows; n++)
@@ -536,27 +573,49 @@ void Simg::resize_linear_sample_1D_fast(uchar * srcBuffer, int srcCols, int srcR
 		int preciseY_int = (y << 11) * srcRows / dstRows + (srcRows << 10) / dstRows - 1024;
 
 	
-		int i_int = MIN(MAX((preciseX_int>>11), 0), srcCols - 1);
+		int i = MIN(MAX((preciseX_int>>11), 0), srcCols - 1);
 		
-		int j_int = MIN(MAX((preciseY_int>>11), 0), srcRows - 1);
+		int j = MIN(MAX((preciseY_int>>11), 0), srcRows - 1);
 	
-		int u_int = preciseX_int - (i_int << 11);
-		int v_int = preciseY_int - (j_int << 11);
-
-	
-
-		int f_i_j_int = srcBuffer[i_int + j_int * srcCols];
-		int f_i1_j_int = srcBuffer[i_int + 1 + j_int * srcCols];
-		int f_i_j1_int = srcBuffer[i_int + j_int * srcCols + srcCols];
-		int f_i1_j1_int = srcBuffer[i_int + 1 + j_int * srcCols + srcCols];
-
-
+		int u = preciseX_int - (i << 11);
+		int v = preciseY_int - (j << 11);
 
 	
-		int f_u_v_int = ((2048 - u_int)*(2048 - v_int)*f_i_j_int + (2048 - u_int)*v_int*f_i_j1_int + u_int * (2048 - v_int)*f_i1_j_int + u_int * v_int*f_i1_j1_int) >> 22;
+		if (1 == channels)
+		{
+			int f_i_j = srcBuffer[i + j * srcCols];
+			int f_i1_j = srcBuffer[i + 1 + j * srcCols];
+			int f_i_j1 = srcBuffer[i + j * srcCols + srcCols];
+			int f_i1_j1 = srcBuffer[i + 1 + j * srcCols + srcCols];
+			int f_u_v = ((2048 - u)*(2048 - v)*f_i_j + (2048 - u)*v*f_i_j1 + u * (2048 - v)*f_i1_j + u * v*f_i1_j1) >> 22;
+			dstBuffer[n] = (uchar)f_u_v;
+		}
+		else
+		{
+			int f_i_j_b = srcBuffer[(i + j * srcCols)*channels];
+			int f_i1_j_b = srcBuffer[(i + 1 + j * srcCols)*channels];
+			int f_i_j1_b = srcBuffer[(i + j * srcCols + srcCols)*channels];
+			int f_i1_j1_b = srcBuffer[(i + 1 + j * srcCols + srcCols)*channels];
+			int f_u_v_b = ((2048 - u)*(2048 - v)*f_i_j_b + (2048 - u)*v*f_i_j1_b + u * (2048 - v)*f_i1_j_b + u * v*f_i1_j1_b) >> 22;
+
+			int f_i_j_g = srcBuffer[(i + j * srcCols)*channels+1];
+			int f_i1_j_g = srcBuffer[(i + 1 + j * srcCols)*channels + 1];
+			int f_i_j1_g = srcBuffer[(i + j * srcCols + srcCols)*channels + 1];
+			int f_i1_j1_g = srcBuffer[(i + 1 + j * srcCols + srcCols)*channels + 1];
+			int f_u_v_g = ((2048 - u)*(2048 - v)*f_i_j_g + (2048 - u)*v*f_i_j1_g + u * (2048 - v)*f_i1_j_g + u * v*f_i1_j1_g) >> 22;
+
+			int f_i_j_r = srcBuffer[(i + j * srcCols)*channels+2];
+			int f_i1_j_r = srcBuffer[(i + 1 + j * srcCols)*channels + 2];
+			int f_i_j1_r = srcBuffer[(i + j * srcCols + srcCols)*channels + 2];
+			int f_i1_j1_r = srcBuffer[(i + 1 + j * srcCols + srcCols)*channels + 2];
+			int f_u_v_r = ((2048 - u)*(2048 - v)*f_i_j_r + (2048 - u)*v*f_i_j1_r + u * (2048 - v)*f_i1_j_r + u * v*f_i1_j1_r) >> 22;
+
+			dstBuffer[channels*n] = (uchar)f_u_v_b;
+			dstBuffer[channels*n + 1] = (uchar)f_u_v_g;
+			dstBuffer[channels*n + 2] = (uchar)f_u_v_r;
+		}
+
 		
-	
-		dstBuffer[n] = (uchar)f_u_v_int;
 	}
 
 }
