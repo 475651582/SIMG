@@ -41,6 +41,12 @@ namespace Simg
 		uchar b, g, r;
 	};
 
+	struct Size
+	{
+		int x, y;
+	};
+	
+
 	class Mat
 	{
 	public:

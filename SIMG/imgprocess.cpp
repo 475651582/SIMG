@@ -42,8 +42,9 @@ void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 	
 	assert(!src.isEmpty() && src.channels() == 3);
 
-	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
-	uchar *srcBuffer = src.dataPtr();
+	Mat _src = src;
+	dst = Mat(_src.cols(), _src.rows(), SIMG_1C8U);
+	uchar *srcBuffer = _src.dataPtr();
 	uchar *dstBuffer = dst.dataPtr();
 
 	float weightB = 0, weightG = 0, weightR = 0;
@@ -76,11 +77,12 @@ void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 void Simg::rgb2lab(Mat & src, Mat & dst, int methods)
 {
 	assert(!src.isEmpty() && src.channels() == 3);
-	dst = Mat(src.cols(), src.rows(), SIMG_3C8U);
-	uchar *srcBuffer = src.dataPtr();
+	Mat _src = src;
+	dst = Mat(_src.cols(), _src.rows(), SIMG_3C8U);
+	uchar *srcBuffer = _src.dataPtr();
 	uchar *dstBuffer = dst.dataPtr();
 	uchar b = 0, g = 0, r = 0, lab_l = 0, lab_a = 0, lab_b = 0;
-	for (int i = 0; i < src.cols() * src.rows(); i++)
+	for (int i = 0; i < _src.cols() * _src.rows(); i++)
 	{
 		b = srcBuffer[3 * i];
 		g = srcBuffer[3 * i + 1];
@@ -347,6 +349,8 @@ void Simg::calcHistogram(Mat &src, Histogram &h)
 	
 }
 
+
+
 Histogram::Histogram(int channel, int col, int row)
 {
 	assert(channel == 1 || channel == 3);
@@ -444,4 +448,115 @@ int * Simg::Histogram::dataPtr()
 	}
 
 	return _dataPtr;
+}
+
+void Simg::resize(Mat & src, Mat & dst, Size dsize, int method)
+{
+	assert(src.channels() == 1); //consider single channel first
+	Mat _src = src;	//make a shallow copy in case of the situation of src=dst
+
+	dst = Mat(dsize.x, dsize.y, src.datatype());
+	
+
+	uchar* srcBuffer = _src.dataPtr();
+	uchar* dstBuffer = dst.dataPtr();
+	switch (method)
+	{
+	case SIMG_METHOD_RESIZE_NEAREST:
+		resize_nearest_neighbor_sample_1D(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows());
+		break;
+	case SIMG_METHOD_RESIZE_LINEAR:
+		resize_linear_sample_1D(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows());
+		break;
+	case SIMG_METHOD_RESIZE_LINEAR_FAST:
+		resize_linear_sample_1D_fast(srcBuffer, _src.cols(), _src.rows(), dstBuffer, dst.cols(), dst.rows());
+		break;
+	default:
+		break;
+	}
+}
+
+void Simg::resize_nearest_neighbor_sample_1D(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows)
+{
+	float ratioCols = 1.0f * srcCols / dstCols;
+	float ratioRows = 1.0f * srcRows / dstRows;
+	for (int i = 0; i < dstCols * dstRows; i++)
+	{
+		int x = i % dstCols;
+		int y = i / dstCols;
+		int srcX = (int)round(x * ratioCols);
+		int srcY = (int)round(y * ratioRows);
+		dstBuffer[i] = srcBuffer[srcX + srcY * srcCols];
+	}
+	
+}
+
+
+void Simg::resize_linear_sample_1D(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows)
+{
+	float ratioCols = 1.0f * srcCols / dstCols;
+	float ratioRows = 1.0f * srcRows / dstRows;
+	for (int n = 0; n < dstCols * dstRows; n++)
+	{
+		int x = n % dstCols;
+		int y = n / dstCols;
+		
+		
+		float preciseX = (x + 0.5f) * ratioCols - 0.5f;
+		float preciseY = (y + 0.5f) * ratioRows - 0.5f;;
+		int i = MIN(MAX((int)floor(preciseX), 0), srcCols - 1);
+		int j = MIN(MAX((int)floor(preciseY), 0), srcRows - 1);
+		float u = preciseX - i;
+		float v = preciseY - j;
+		
+		float f_i_j = srcBuffer[i + j * srcCols];
+		float f_i1_j = srcBuffer[i + 1 + j * srcCols];
+		float f_i_j1 = srcBuffer[i  + j * srcCols + srcCols];
+		float f_i1_j1 = srcBuffer[i + 1 + j * srcCols + srcCols];
+
+	
+
+		float f_u_v = (1 - u)*(1 - v)*f_i_j + (1 - u)*v*f_i_j1 + u * (1 - v)*f_i1_j + u*v*f_i1_j1;
+		dstBuffer[n] = (uchar) round(f_u_v);
+	}
+
+}
+
+void Simg::resize_linear_sample_1D_fast(uchar * srcBuffer, int srcCols, int srcRows, uchar * dstBuffer, int dstCols, int dstRows)
+{
+	
+	for (int n = 0; n < dstCols * dstRows; n++)
+	{
+		int x = n % dstCols;
+		int y = n / dstCols;
+
+
+		
+		int preciseX_int = (x << 11) * srcCols / dstCols + (srcCols << 10) / dstCols - 1024;
+		int preciseY_int = (y << 11) * srcRows / dstRows + (srcRows << 10) / dstRows - 1024;
+
+	
+		int i_int = MIN(MAX((preciseX_int>>11), 0), srcCols - 1);
+		
+		int j_int = MIN(MAX((preciseY_int>>11), 0), srcRows - 1);
+	
+		int u_int = preciseX_int - (i_int << 11);
+		int v_int = preciseY_int - (j_int << 11);
+
+	
+
+		int f_i_j_int = srcBuffer[i_int + j_int * srcCols];
+		int f_i1_j_int = srcBuffer[i_int + 1 + j_int * srcCols];
+		int f_i_j1_int = srcBuffer[i_int + j_int * srcCols + srcCols];
+		int f_i1_j1_int = srcBuffer[i_int + 1 + j_int * srcCols + srcCols];
+
+
+
+	
+		int f_u_v_int = ((2048 - u_int)*(2048 - v_int)*f_i_j_int + (2048 - u_int)*v_int*f_i_j1_int + u_int * (2048 - v_int)*f_i1_j_int + u_int * v_int*f_i1_j1_int) >> 22;
+		
+	
+		dstBuffer[n] = (uchar)f_u_v_int;
+	}
+
 }
