@@ -37,6 +37,38 @@ void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, size_t &directNu
 	directNum = 9;*/
 }
 
+void convertConvKernel(Mat Kernel, Mat src, int *directArray, int *valueArray, size_t &directNum)
+{
+	assert(!Kernel.isEmpty() && Kernel.cols() % 2 != 0 && Kernel.rows() % 2 != 0);
+	size_t kernelLength = Kernel.cols() * Kernel.rows();
+	char *kernelBuffer = (char*)Kernel.dataPtr();
+	int anchorPointX = Kernel.cols() / 2;
+	int anchorPointY = Kernel.rows() / 2;
+	directNum = 0;
+	for (size_t i = 0; i < kernelLength; i++)
+	{
+		if (kernelBuffer[i] != 0)
+		{
+			int x = i % Kernel.cols();
+			int y = i / Kernel.cols();
+			int direct = (x - anchorPointX) + (y - anchorPointY) * src.cols();
+			directArray[directNum] = direct;
+			valueArray[directNum++] = kernelBuffer[i];
+		}
+	}
+
+	/*directArray[0] = 0;
+	directArray[1] = -1;
+	directArray[2] = 1;
+	directArray[3] = -src.cols();
+	directArray[4] = src.cols();
+	directArray[5] = 1 - src.cols();
+	directArray[6] = 1 + src.cols();
+	directArray[7] = -1 - src.cols();
+	directArray[8] = -1 + src.cols();
+	directNum = 9;*/
+}
+
 void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 {
 	
@@ -186,6 +218,43 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 
 		delete directArray; directArray = NULL;
 	}
+}
+
+void Simg::conv(Mat & src, Mat & dst, Mat kernel)
+{
+	assert(!src.isEmpty() && src.channels() == 1); //consider 1 channel first
+	Mat _src = src;
+	
+
+	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
+	int *directArray = new int[kernel.cols()*kernel.rows()];
+	int *convArray = new int[kernel.cols()*kernel.rows()];
+	
+
+	int x = 0, y = 0;
+	size_t directNum = 0;
+	convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+	uchar *srcBuffer = _src.dataPtr();
+	uchar *dstBuffer = dst.dataPtr();
+	for (int i = 0; i < src.cols()*src.rows(); i++)
+	{
+
+		int sum = 0;
+		for (size_t j = 0; j < directNum; j++)
+		{
+			int index = i + directArray[j];
+			x = index % src.cols();
+			y = index / src.cols();
+			if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
+			int neighbor = srcBuffer[index];
+			sum  += neighbor * convArray[j];
+		}
+		dstBuffer[i] = MAX(MIN(sum, 255),0);
+	}
+
+	delete directArray; directArray = NULL;
+	delete convArray; convArray = NULL;
 }
 
 int Simg::threshold(Mat & src, Mat & dst, int threshValue, int method, int value)
