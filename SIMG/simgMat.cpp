@@ -49,6 +49,7 @@ Mat Mat::operator+(const Mat & m)
 
 Mat Simg::Mat::operator+(const uchar m)
 {
+	assert(_dataPtr != NULL && SIMG_1C8U == _dataType);
 	Mat ret(_cols, _rows, _dataType);
 	for (int i = 0; i < _matLength * _channels; i++)
 	{
@@ -71,11 +72,19 @@ Mat Simg::Mat::operator-(const Mat & m)
 
 Mat Simg::Mat::operator-(const uchar m)
 {
+	assert(_dataPtr != NULL && SIMG_1C8U == _dataType);
 	Mat ret(_cols, _rows, _dataType);
 	for (int i = 0; i < _matLength * _channels; i++)
 	{
 		ret._dataPtr[i] = MIN(MAX(_dataPtr[i] - m, 0), 255);
 	}
+	return ret;
+}
+
+Mat Simg::Mat::copy()
+{
+	Mat ret(_cols, _rows, _dataType);
+	memcpy(ret._dataPtr, _dataPtr, _dataLength);
 	return ret;
 }
 
@@ -144,21 +153,6 @@ Mat Simg::Mat::convertTo(int datatype)
 
 
 
-void Simg::Mat::setPixel(int col, int row, uchar data)
-{
-	assert(col >= 0 && col < _cols&&row >= 0 && row < _rows&&_dataPtr != NULL && _channels == 1);
-	if (*_pcount > 1)
-	{
-		*_pcount--;
-		//allocate new ptr and memory for dst mat
-		size_t* tmpPcount = new size_t(1);
-		uchar* tmpDataPtr = new uchar[_dataLength];
-		memcpy(tmpDataPtr, _dataPtr, _dataLength);
-		_dataPtr = tmpDataPtr;
-		_pcount = tmpPcount;
-	}
-	_dataPtr[col * _cellLength + row * _cellLength * _cols] = data;
-}
 
 Mat Simg::Mat::setTo(uchar data)
 {
@@ -169,23 +163,23 @@ Mat Simg::Mat::setTo(uchar data)
 	return ret;
 }
 
-void Simg::Mat::setPixel(int col, int row, uchar ch1, uchar ch2, uchar ch3)
-{
-	assert(col >= 0 && col < _cols&&row >= 0 && row < _rows&&_dataPtr != NULL && _channels == 3);
-	if (*_pcount > 1)
-	{
-		*_pcount--;
-		//allocate new ptr and memory for dst mat
-		size_t* tmpPcount = new size_t(1);
-		uchar* tmpDataPtr = new uchar[_dataLength];
-		memcpy(tmpDataPtr, _dataPtr, _dataLength);
-		_dataPtr = tmpDataPtr;
-		_pcount = tmpPcount;
-	}
-	_dataPtr[col * _cellLength + row * _cellLength * _cols] = ch1;
-	_dataPtr[col * _cellLength + row * _cellLength * _cols + 1] = ch2;
-	_dataPtr[col * _cellLength + row * _cellLength * _cols + 2] = ch3;
-}
+//void Simg::Mat::setPixel(int col, int row, uchar ch1, uchar ch2, uchar ch3)
+//{
+//	assert(col >= 0 && col < _cols&&row >= 0 && row < _rows&&_dataPtr != NULL && _channels == 3);
+//	if (*_pcount > 1)
+//	{
+//		*_pcount--;
+//		//allocate new ptr and memory for dst mat
+//		size_t* tmpPcount = new size_t(1);
+//		uchar* tmpDataPtr = new uchar[_dataLength];
+//		memcpy(tmpDataPtr, _dataPtr, _dataLength);
+//		_dataPtr = tmpDataPtr;
+//		_pcount = tmpPcount;
+//	}
+//	_dataPtr[col * _cellLength + row * _cellLength * _cols] = ch1;
+//	_dataPtr[col * _cellLength + row * _cellLength * _cols + 1] = ch2;
+//	_dataPtr[col * _cellLength + row * _cellLength * _cols + 2] = ch3;
+//}
 
 Mat Simg::Mat::setTo(uchar ch1, uchar ch2, uchar ch3)
 {

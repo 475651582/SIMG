@@ -43,7 +43,10 @@ namespace Simg
 
 	struct Size
 	{
-		Size();
+		Size()
+		{
+			x = 0; y = 0;
+		}
 		Size(int _x, int _y)
 		{
 			x = _x; y = _y;
@@ -54,6 +57,7 @@ namespace Simg
 
 	class Mat
 	{
+		
 	public:
 		Mat();
 		Mat(int ncols, int nrows, int datatype);
@@ -110,16 +114,22 @@ namespace Simg
 
 		Mat	operator - (const Mat &m);
 		Mat	operator - (const uchar m);
-
+		Mat copy(); //get a deep copy of the Mat;
 
 		uchar* row(int indRow);	//reserved!
 		int rows() { return _rows; };
 		int cols() { return _cols; };
 		int channels() { return _channels; };
 		int datatype() { return _dataType; };
-		void setPixel(int col, int row, uchar data);	//set pixel to assigned value(single channel only)
+
+		template <typename dtype>
+		void setPixel(int col, int row, dtype data);
+
+		template <typename dtype>
+		void setPixel(int col, int row, dtype ch1, dtype ch2, dtype ch3); //set pixel to assigned value(3 channel only)
+
 		Mat setTo(uchar data);	//set whole image to assigned value (single channel only)
-		void setPixel(int col, int row, uchar ch1, uchar ch2, uchar ch3); //set pixel to assigned value(3 channel only)
+		
 		Mat setTo(uchar ch1, uchar ch2, uchar ch3);	//set whole image to assigned value (3 channel only)
 
 		~Mat();
@@ -157,5 +167,112 @@ namespace Simg
 
 	};
 
+	template<typename dtype>
+	inline void Mat::setPixel(int col, int row, dtype data)
+	{
+		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && _channels == 1);
+
+		if (*_pcount > 1)
+		{
+			*_pcount--;
+			//allocate new ptr and memory for dst mat
+			size_t* tmpPcount = new size_t(1);
+			uchar* tmpDataPtr = new uchar[_dataLength];
+			memcpy(tmpDataPtr, _dataPtr, _dataLength);
+			_dataPtr = tmpDataPtr;
+			_pcount = tmpPcount;
+		}
+
+		
+		switch (_dataType)
+		{
+		case SIMG_1C8U:
+		{
+			uchar* ptr = (uchar*)_dataPtr;
+			ptr[col + row * _cols] = (uchar)data;
+			break;
+		}			
+		case SIMG_1C8S:
+		{
+			char* ptr = (char*)_dataPtr;
+			ptr[col + row * _cols] = (char)data;
+			break;
+		}
+		case SIMG_1C32F:
+		{
+			float* ptr = (float*)_dataPtr;
+			ptr[col + row * _cols] = (float)data;
+			break;
+		}
+		case SIMG_1C64F:
+		{
+			double* ptr = (double*)_dataPtr;
+			ptr[col + row * _cols] = (double)data;
+			break;
+		}
+		default:
+			break;
+		}
+
+		
+	}
+
+	template<typename dtype>
+	inline void Mat::setPixel(int col, int row, dtype ch1, dtype ch2, dtype ch3)
+	{
+		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && _channels == 3);
+
+		if (*_pcount > 1)
+		{
+			*_pcount--;
+			//allocate new ptr and memory for dst mat
+			size_t* tmpPcount = new size_t(1);
+			uchar* tmpDataPtr = new uchar[_dataLength];
+			memcpy(tmpDataPtr, _dataPtr, _dataLength);
+			_dataPtr = tmpDataPtr;
+			_pcount = tmpPcount;
+		}
+
+
+		switch (_dataType)
+		{
+		case SIMG_3C8U:
+		{
+			uchar* ptr = (uchar*)_dataPtr;
+			ptr[(col + row * _cols) * 3] = (uchar)ch1;
+			ptr[(col + row * _cols) * 3 + 1] = (uchar)ch2;
+			ptr[(col + row * _cols) * 3 + 2] = (uchar)ch3;
+			break;
+		}
+		case SIMG_3C8S:
+		{
+			char* ptr = (char*)_dataPtr;
+			ptr[(col + row * _cols) * 3] = (char)ch1;
+			ptr[(col + row * _cols) * 3 + 1] = (char)ch2;
+			ptr[(col + row * _cols) * 3 + 2] = (char)ch3;
+			break;
+		}
+		case SIMG_3C32F:
+		{
+			float* ptr = (float*)_dataPtr;
+			ptr[(col + row * _cols) * 3] = (float)ch1;
+			ptr[(col + row * _cols) * 3 + 1] = (float)ch2;
+			ptr[(col + row * _cols) * 3 + 2] = (float)ch3;
+			break;
+		}
+		case SIMG_3C64F:
+		{
+			double* ptr = (double*)_dataPtr;
+			ptr[(col + row * _cols) * 3] = (double)ch1;
+			ptr[(col + row * _cols) * 3 + 1] = (double)ch2;
+			ptr[(col + row * _cols) * 3 + 2] = (double)ch3;
+			break;
+		}
+		default:
+			break;
+		}
+
+
+	}
 }
 

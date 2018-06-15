@@ -74,7 +74,7 @@ void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 	
 	assert(!src.isEmpty() && src.channels() == 3);
 
-	Mat _src = src;
+	Mat _src = src.copy();
 	dst = Mat(_src.cols(), _src.rows(), SIMG_1C8U);
 	uchar *srcBuffer = _src.dataPtr();
 	uchar *dstBuffer = dst.dataPtr();
@@ -109,7 +109,7 @@ void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 void Simg::rgb2lab(Mat & src, Mat & dst, int methods)
 {
 	assert(!src.isEmpty() && src.channels() == 3);
-	Mat _src = src;
+	Mat _src = src.copy();
 	dst = Mat(_src.cols(), _src.rows(), SIMG_3C8U);
 	uchar *srcBuffer = _src.dataPtr();
 	uchar *dstBuffer = dst.dataPtr();
@@ -153,7 +153,7 @@ void Simg::rgb2lab_pixelStandard(uchar r, uchar g, uchar b, uchar & lab_l, uchar
 void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 {
 	assert(!src.isEmpty() && !kernel.isEmpty() && src.channels() == 1);
-	Mat _src = src;
+	Mat _src = src.copy();
 
 	if (1 == src.channels()) //consider single channel image first.
 	{
@@ -188,7 +188,7 @@ void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 {
 	assert(!src.isEmpty() && !kernel.isEmpty() && src.channels() == 1);
-	Mat _src = src;
+	Mat _src = src.copy();
 
 	if (1 == src.channels()) //consider single channel image first.
 	{
@@ -223,7 +223,7 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 void Simg::conv(Mat & src, Mat & dst, Mat kernel)
 {
 	assert(!src.isEmpty() && src.channels() == 1); //consider 1 channel first
-	Mat _src = src;
+	Mat _src = src.copy();
 	
 
 	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
@@ -260,7 +260,7 @@ void Simg::conv(Mat & src, Mat & dst, Mat kernel)
 int Simg::threshold(Mat & src, Mat & dst, int threshValue, int method, int value)
 {
 	assert(!src.isEmpty() && src.channels() == 1);
-	Mat _src = src;
+	Mat _src = src.copy();
 	if (src.channels() == 1)
 	{
 		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
@@ -323,11 +323,11 @@ Mat Simg::getMorphStructor(int cols, int rows, int structorType)
 				int r2 = (x - anchorPointX)*(x - anchorPointX) + (y - anchorPointY)*(y - anchorPointY);
 				if (r2 <= radius2)
 				{
-					ret.setPixel(x, y, 1);
+					ret.setPixel(x, y, (uchar)1);
 				}
 				else
 				{
-					ret.setPixel(x, y, 0);
+					ret.setPixel(x, y, (uchar)0);
 				}
 			}
 		break;
@@ -340,11 +340,11 @@ Mat Simg::getMorphStructor(int cols, int rows, int structorType)
 			int l2 = abs(x - anchorPointX) + abs(y - anchorPointY);
 			if (l2 <= (MIN(cols,rows) / 2))
 			{
-				ret.setPixel(x, y, 1);
+				ret.setPixel(x, y, (uchar)1);
 			}
 			else
 			{
-				ret.setPixel(x, y, 0);
+				ret.setPixel(x, y, (uchar)0);
 			}
 		}
 		break;
@@ -354,11 +354,11 @@ Mat Simg::getMorphStructor(int cols, int rows, int structorType)
 		{
 			if (x == (MIN(cols, rows) / 2) || y == (MIN(cols, rows) / 2))
 			{
-				ret.setPixel(x, y, 1);
+				ret.setPixel(x, y, (uchar)1);
 			}
 			else
 			{
-				ret.setPixel(x, y, 0);
+				ret.setPixel(x, y, (uchar)0);
 			}
 		}
 		break;
@@ -366,7 +366,7 @@ Mat Simg::getMorphStructor(int cols, int rows, int structorType)
 		for (int x = 0; x < cols; x++)
 		for (int y = 0; y < rows; y++)
 		{
-			ret.setPixel(x, y, 1);
+			ret.setPixel(x, y, (uchar)1);
 		}
 		break;
 	default:
@@ -522,7 +522,7 @@ int * Simg::Histogram::dataPtr()
 void Simg::resize(Mat & src, Mat & dst, Size dsize, int method)
 {
 	//assert(src.channels() == 1); //consider single channel first
-	Mat _src = src;	//make a shallow copy in case of the situation of src=dst
+	Mat _src = src.copy();	//make a shallow copy in case of the situation of src=dst
 
 	dst = Mat(dsize.x, dsize.y, src.datatype());
 	
