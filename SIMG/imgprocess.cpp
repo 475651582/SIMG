@@ -346,16 +346,22 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 	{
 		int *directArray = new int[kernel.cols()*kernel.rows()];
 		float *convArray = new float[kernel.cols()*kernel.rows()];
+		int *convArrayFast = new int[kernel.cols()*kernel.rows()];
+		
 
 		int x = 0, y = 0;
 		size_t directNum = 0;
 		convertConvKernel(kernel, src, directArray, convArray, directNum);
+		for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
+		{
+			convArrayFast[i] = (int)(convArray[i] * 1024);
+		}
 
 		uchar *srcBuffer = _src.dataPtr();
 		uchar *dstBuffer = dst.dataPtr();
 		for (int i = 0; i < src.cols()*src.rows(); i++)
 		{
-			float sum = 0;
+			int sum = 0;
 			for (size_t j = 0; j < directNum; j++)
 			{
 				int index = i + directArray[j];
@@ -363,9 +369,11 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 				y = index / src.cols();
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
 				int neighbor = srcBuffer[index];
-				sum += neighbor * convArray[j];
+				sum += neighbor * convArrayFast[j];
 			}
+			sum = sum >> 10;
 			dstBuffer[i] = (uchar)MAX(MIN(sum, 255), 0);
+
 		}
 		delete directArray; directArray = NULL;
 		delete convArray; convArray = NULL;
@@ -408,7 +416,7 @@ void Simg::conv2f(Mat & src, Mat & dst, Mat kernel)
 				x = index % src.cols();
 				y = index / src.cols();
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
-				int neighbor = srcBuffer[index];
+				int neighbor = (int)srcBuffer[index];
 				sum += neighbor * convArray[j];
 			}
 			dstBuffer[i] = sum;
@@ -438,7 +446,7 @@ void Simg::conv2f(Mat & src, Mat & dst, Mat kernel)
 				x = index % src.cols();
 				y = index / src.cols();
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
-				int neighbor = srcBuffer[index];
+				int neighbor = (int)srcBuffer[index];
 				sum += neighbor * convArray[j];
 			}
 			dstBuffer[i] = sum;
