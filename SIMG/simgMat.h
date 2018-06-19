@@ -141,7 +141,7 @@ namespace Simg
 		void setPixel(int col, int row, dtype ch1, dtype ch2, dtype ch3); //set pixel to assigned value(3 channel only)
 
 		template <typename dtype>
-		Mat setTo(dtype data);	//set whole image to assigned value (single channel only)
+		void setTo(dtype data);	//set whole image to assigned value (single channel only)
 
 		
 		template <typename dtype>
@@ -150,6 +150,8 @@ namespace Simg
 		~Mat();
 
 		uchar* dataPtr();
+
+		
 
 		Mat convertTo(int datatype);
 		bool isEmpty() { return NULL == _dataPtr; };
@@ -290,10 +292,20 @@ namespace Simg
 
 	}
 	template<typename dtype>
-	inline Mat Mat::setTo(dtype data)
+	inline void Mat::setTo(dtype data)
 	{
+
 		assert(_dataPtr != NULL && _channels == 1);
-		Mat ret(_cols, _rows, _dataType);
+		if (*_pcount > 1)
+		{
+			*_pcount--;
+			//allocate new ptr and memory for dst mat
+			size_t* tmpPcount = new size_t(1);
+			uchar* tmpDataPtr = new uchar[_dataLength];
+			memcpy(tmpDataPtr, _dataPtr, _dataLength);
+			_dataPtr = tmpDataPtr;
+			_pcount = tmpPcount;
+		}
 
 		for (int i = 0; i < _cols *_rows; i++)
 		{
@@ -329,7 +341,6 @@ namespace Simg
 			}
 
 		}
-		return ret;
 	}
 
 	template<typename dtype>

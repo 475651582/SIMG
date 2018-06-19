@@ -91,8 +91,8 @@ Simg::sWindow::~sWindow()
 int Simg::sWindow::updateMat(Mat m)
 {
 	assert(NULL != m._dataPtr);
-
-	_mat = Mat(m); 
+	
+	_mat = Mat(m.copy()); 
 	_initialized = true;
 	_needRender = true;
 	return 0;
@@ -189,6 +189,30 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		}
+		case SIMG_1C32F:
+		{
+			bmpInfo.bmiHeader.biCompression = BI_RGB;
+			bmpInfo.bmiHeader.biBitCount = 24;
+			hdcmem = CreateCompatibleDC(hdc);
+			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			matBuffer = new  uchar[DIBTotalBytes];
+			vector<float> matMax, matMin;
+			win->_mat.getMax(matMax);
+			win->_mat.getMin(matMin);
+			assert(matMax.size() > 0 && matMin.size() > 0);
+
+			float minValue = matMin[0];
+			float maxValue = matMax[0];
+			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
+			{
+				float *ptr = (float*)win->_mat._dataPtr;
+				uchar grayData = (uchar)((ptr[i] - minValue) / (maxValue - minValue) * UCHAR_MAX);
+				matBuffer[3 * i] = grayData;
+				matBuffer[3 * i + 1] = grayData;
+				matBuffer[3 * i + 2] = grayData;
+			}
+			break;
+		}
 		case SIMG_3C32F:
 		{
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
@@ -196,13 +220,24 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			hdcmem = CreateCompatibleDC(hdc);
 			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
 			matBuffer = new  uchar[DIBTotalBytes];
+			vector<float> matMax, matMin;
+			win->_mat.getMax(matMax);
+			win->_mat.getMin(matMin);
+			assert(matMax.size() > 2 && matMin.size() > 2);
 
+			float minValueB = matMin[0], maxValueB = matMax[0];
+			float minValueG = matMin[1], maxValueG = matMax[1];
+			float minValueR = matMin[2], maxValueR = matMax[2];
 
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
-				matBuffer[3 * i] = (uchar)win->_mat._dataPtr[i];
-				matBuffer[3 * i + 1] = (uchar)win->_mat._dataPtr[i];
-				matBuffer[3 * i + 2] = (uchar)win->_mat._dataPtr[i];
+				float *ptr = (float*)win->_mat._dataPtr;
+				uchar dataB = (uchar)((ptr[3*i] - minValueB) / (maxValueB - minValueB) * UCHAR_MAX);
+				uchar dataG = (uchar)((ptr[3 * i + 1] - minValueG) / (maxValueG - minValueG) * UCHAR_MAX);
+				uchar dataR = (uchar)((ptr[3 * i + 2] - minValueR) / (maxValueR - minValueR) * UCHAR_MAX);
+				matBuffer[3 * i] = dataB;
+				matBuffer[3 * i + 1] = dataG;
+				matBuffer[3 * i + 2] = dataR;
 			}
 			break;
 		}

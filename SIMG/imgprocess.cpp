@@ -37,11 +37,13 @@ void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, size_t &directNu
 	directNum = 9;*/
 }
 
-void convertConvKernel(Mat Kernel, Mat src, int *directArray, int *valueArray, size_t &directNum)
+template<typename dtype>
+void convertConvKernel(Mat Kernel, Mat src, int *directArray, dtype *valueArray, size_t &directNum)
 {
 	assert(!Kernel.isEmpty() && Kernel.cols() % 2 != 0 && Kernel.rows() % 2 != 0);
+
 	size_t kernelLength = Kernel.cols() * Kernel.rows();
-	char *kernelBuffer = (char*)Kernel.dataPtr();
+	dtype *kernelBuffer = (dtype*)Kernel.dataPtr();
 	int anchorPointX = Kernel.cols() / 2;
 	int anchorPointY = Kernel.rows() / 2;
 	directNum = 0;
@@ -220,41 +222,228 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 	}
 }
 
-void Simg::conv(Mat & src, Mat & dst, Mat kernel)
+void Simg::conv(Mat & src, Mat & dst, Mat kernel, int FORMAT)
 {
 	assert(!src.isEmpty() && src.channels() == 1); //consider 1 channel first
+	assert(kernel.datatype() == FORMAT);
 	Mat _src = src.copy();
-	
+	dst = Mat(src.cols(), src.rows(), FORMAT);
 
-	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
-	int *directArray = new int[kernel.cols()*kernel.rows()];
-	int *convArray = new int[kernel.cols()*kernel.rows()];
-	
-
-	int x = 0, y = 0;
-	size_t directNum = 0;
-	convertConvKernel(kernel, src, directArray, convArray, directNum);
-
-	uchar *srcBuffer = _src.dataPtr();
-	uchar *dstBuffer = dst.dataPtr();
-	for (int i = 0; i < src.cols()*src.rows(); i++)
+	switch (FORMAT)
 	{
+	case SIMG_1C8U:
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		uchar *convArray = new uchar[kernel.cols()*kernel.rows()];
 
-		int sum = 0;
-		for (size_t j = 0; j < directNum; j++)
+		int x = 0, y = 0;
+		size_t directNum = 0;
+		convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
 		{
-			int index = i + directArray[j];
-			x = index % src.cols();
-			y = index / src.cols();
-			if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
-			int neighbor = srcBuffer[index];
-			sum  += neighbor * convArray[j];
+			int sum = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
+				int neighbor = srcBuffer[index];
+				sum += neighbor * convArray[j];
+			}
+			dstBuffer[i] = MAX(MIN(sum, 255), 0);
 		}
-		dstBuffer[i] = MAX(MIN(sum, 255),0);
+		delete directArray; directArray = NULL;
+		delete convArray; convArray = NULL;
+	}
+	case SIMG_1C32F:
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		float *convArray = new float[kernel.cols()*kernel.rows()];
+
+		int x = 0, y = 0;
+		size_t directNum = 0;
+		convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+
+			int sum = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
+				int neighbor = srcBuffer[index];
+				sum += neighbor * convArray[j];
+			}
+			dstBuffer[i] = MAX(MIN(sum, 255), 0);
+		}
+
+		delete directArray; directArray = NULL;
+		delete convArray; convArray = NULL;
+	}
+	default:
+		break;
+	}
+	
+}
+
+void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
+{
+	assert(!src.isEmpty() && src.channels() == 1);
+	assert(src.datatype() == SIMG_1C8U);
+	assert(kernel.datatype() == SIMG_1C8S || kernel.datatype() == SIMG_1C32F);
+	Mat _src = src.copy();
+	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
+
+	switch (kernel.datatype())
+	{
+	case SIMG_1C8S:
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		char *convArray = new char[kernel.cols()*kernel.rows()];
+
+		int x = 0, y = 0;
+		size_t directNum = 0;
+		convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+			int sum = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
+				int neighbor = srcBuffer[index];
+				sum += neighbor * convArray[j];
+			}
+			dstBuffer[i] = MAX(MIN(sum, 255), 0);
+		}
+		delete directArray; directArray = NULL;
+		delete convArray; convArray = NULL;
+		break;
+	}
+		
+	case SIMG_1C32F:
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		float *convArray = new float[kernel.cols()*kernel.rows()];
+
+		int x = 0, y = 0;
+		size_t directNum = 0;
+		convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+			float sum = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
+				int neighbor = srcBuffer[index];
+				sum += neighbor * convArray[j];
+			}
+			dstBuffer[i] = (uchar)MAX(MIN(sum, 255), 0);
+		}
+		delete directArray; directArray = NULL;
+		delete convArray; convArray = NULL;
+		break;
+	}		
+
+	default:
+		break;
+	}
+}
+
+
+void Simg::conv2f(Mat & src, Mat & dst, Mat kernel)
+{
+	assert(!src.isEmpty() && src.channels() == 1);
+	assert(src.datatype() == SIMG_1C32F);
+	assert(kernel.datatype() == SIMG_1C8S || kernel.datatype() == SIMG_1C32F);
+	Mat _src = src.copy();
+	dst = Mat(src.cols(), src.rows(), SIMG_1C32F);
+
+	switch (kernel.datatype())
+	{
+	case SIMG_1C8S:
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		uchar *convArray = new uchar[kernel.cols()*kernel.rows()];
+
+		int x = 0, y = 0;
+		size_t directNum = 0;
+		convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+		float *srcBuffer = (float*)_src.dataPtr();
+		float *dstBuffer = (float*)dst.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+			float sum = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
+				int neighbor = srcBuffer[index];
+				sum += neighbor * convArray[j];
+			}
+			dstBuffer[i] = sum;
+		}
+		delete directArray; directArray = NULL;
+		delete convArray; convArray = NULL;
+		break;
 	}
 
-	delete directArray; directArray = NULL;
-	delete convArray; convArray = NULL;
+	case SIMG_1C32F:
+	{
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		float *convArray = new float[kernel.cols()*kernel.rows()];
+
+		int x = 0, y = 0;
+		size_t directNum = 0;
+		convertConvKernel(kernel, src, directArray, convArray, directNum);
+
+		float *srcBuffer = (float*)_src.dataPtr();
+		float *dstBuffer = (float*)dst.dataPtr();
+		for (int i = 0; i < src.cols()*src.rows(); i++)
+		{
+			float sum = 0;
+			for (size_t j = 0; j < directNum; j++)
+			{
+				int index = i + directArray[j];
+				x = index % src.cols();
+				y = index / src.cols();
+				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
+				int neighbor = srcBuffer[index];
+				sum += neighbor * convArray[j];
+			}
+			dstBuffer[i] = sum;
+		}
+		delete directArray; directArray = NULL;
+		delete convArray; convArray = NULL;
+		break;
+	}
+
+	default:
+		break;
+	}
 }
 
 int Simg::threshold(Mat & src, Mat & dst, int threshValue, int method, int value)

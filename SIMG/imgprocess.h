@@ -83,7 +83,9 @@ namespace Simg
 	void rgb2lab_pixelStandard(uchar r, uchar g, uchar b, uchar &lab_l, uchar &lab_a, uchar &lab_b);
 	void dilate(Mat &src, Mat &dst, Mat kernel);
 	void erode(Mat &src, Mat &dst, Mat kernel);
-	void conv(Mat &src, Mat &dst, Mat kernel);
+	void conv(Mat &src, Mat &dst, Mat kernel, int FORMAT);
+	void conv2(Mat &src, Mat &dst, Mat kernel);
+	void conv2f(Mat &src, Mat &dst, Mat kernel);
 
 	int threshold(Mat &src, Mat &dst, int threshold, int method = SIMG_METHOD_THRESHOLD_BINARY, int value = 255);
 	Mat getMorphStructor(int cols, int rows, int structorType = SIMG_MORPH_RECTANGLE);
