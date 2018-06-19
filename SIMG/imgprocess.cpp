@@ -263,10 +263,16 @@ void Simg::conv(Mat & src, Mat & dst, Mat kernel, int FORMAT)
 	{
 		int *directArray = new int[kernel.cols()*kernel.rows()];
 		float *convArray = new float[kernel.cols()*kernel.rows()];
+		int *convArrayFast = new int[kernel.cols()*kernel.rows()];
 
 		int x = 0, y = 0;
 		size_t directNum = 0;
 		convertConvKernel(kernel, src, directArray, convArray, directNum);
+		for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
+		{
+			convArrayFast[i] = (int)(convArray[i]) << 10;
+		}
+
 
 		uchar *srcBuffer = _src.dataPtr();
 		uchar *dstBuffer = dst.dataPtr();
@@ -281,8 +287,9 @@ void Simg::conv(Mat & src, Mat & dst, Mat kernel, int FORMAT)
 				y = index / src.cols();
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
 				int neighbor = srcBuffer[index];
-				sum += neighbor * convArray[j];
+				sum += neighbor * convArrayFast[j];
 			}
+			sum = sum >> 10;
 			dstBuffer[i] = MAX(MIN(sum, 255), 0);
 		}
 
