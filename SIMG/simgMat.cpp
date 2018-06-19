@@ -40,46 +40,122 @@ Mat Mat::operator+(const Mat & m)
 	assert(_cols == m._cols && _rows == m._rows && _dataType == m._dataType && _dataPtr != NULL && m._dataPtr != NULL);
 
 	Mat ret(_cols, _rows, _dataType);
-	for (int i = 0; i < _matLength * _channels; i++)
+	
+
+	switch (_dataType)
 	{
-		ret._dataPtr[i] = MAX(MIN(_dataPtr[i] + m._dataPtr[i], 255),0);
+	case SIMG_1C8U:
+	{
+		uchar* ptr_ret = (uchar*)ret._dataPtr;
+		uchar* ptr = (uchar*)_dataPtr;
+		uchar* ptr_m = (uchar*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = MAX(MIN(ptr[i] + ptr_m[i], UCHAR_MAX), 0);
+		}
+		break;
 	}
+	case SIMG_1C8S:
+	{
+		char* ptr_ret = (char*)ret._dataPtr;
+		char* ptr = (char*)_dataPtr;
+		char* ptr_m = (char*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = MAX(MIN(ptr[i] + ptr_m[i], CHAR_MAX), CHAR_MIN);
+		}
+		break;
+	}
+	case SIMG_1C32F:
+	{
+		float* ptr_ret = (float*)ret._dataPtr;
+		float* ptr = (float*)_dataPtr;
+		float* ptr_m = (float*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = ptr[i] + ptr_m[i];
+		}
+		break;
+	}
+	case SIMG_1C64F:
+	{
+		double* ptr_ret = (double*)ret._dataPtr;
+		double* ptr = (double*)_dataPtr;
+		double* ptr_m = (double*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = ptr[i] + ptr_m[i];
+		}
+		break;
+	}
+	default:
+		break;
+	}
+
 	return ret;
 }
 
-Mat Simg::Mat::operator+(const uchar m)
-{
-	assert(_dataPtr != NULL && SIMG_1C8U == _dataType);
-	Mat ret(_cols, _rows, _dataType);
-	for (int i = 0; i < _matLength * _channels; i++)
-	{
-		ret._dataPtr[i] = MAX(MIN(_dataPtr[i] + m, 255), 0);
-	}
-	return ret;
-}
 
-Mat Simg::Mat::operator-(const Mat & m)
+Mat Mat::operator-(const Mat & m)
 {
 	assert(_cols == m._cols && _rows == m._rows && _dataType == m._dataType && _dataPtr != NULL && m._dataPtr != NULL);
 
 	Mat ret(_cols, _rows, _dataType);
-	for (int i = 0; i < _matLength * _channels; i++)
+
+
+	switch (_dataType)
 	{
-		ret._dataPtr[i] = MIN(MAX(_dataPtr[i] - m._dataPtr[i], 0), 255);
+	case SIMG_1C8U:
+	{
+		uchar* ptr_ret = (uchar*)ret._dataPtr;
+		uchar* ptr = (uchar*)_dataPtr;
+		uchar* ptr_m = (uchar*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = MAX(MIN(ptr[i] - ptr_m[i], UCHAR_MAX), 0);
+		}
+		break;
 	}
+	case SIMG_1C8S:
+	{
+		char* ptr_ret = (char*)ret._dataPtr;
+		char* ptr = (char*)_dataPtr;
+		char* ptr_m = (char*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = MAX(MIN(ptr[i] - ptr_m[i], CHAR_MAX), CHAR_MIN);
+		}
+		break;
+	}
+	case SIMG_1C32F:
+	{
+		float* ptr_ret = (float*)ret._dataPtr;
+		float* ptr = (float*)_dataPtr;
+		float* ptr_m = (float*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = ptr[i] - ptr_m[i];
+		}
+		break;
+	}
+	case SIMG_1C64F:
+	{
+		double* ptr_ret = (double*)ret._dataPtr;
+		double* ptr = (double*)_dataPtr;
+		double* ptr_m = (double*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = ptr[i] - ptr_m[i];
+		}
+		break;
+	}
+	default:
+		break;
+	}
+
 	return ret;
 }
 
-Mat Simg::Mat::operator-(const uchar m)
-{
-	assert(_dataPtr != NULL && SIMG_1C8U == _dataType);
-	Mat ret(_cols, _rows, _dataType);
-	for (int i = 0; i < _matLength * _channels; i++)
-	{
-		ret._dataPtr[i] = MIN(MAX(_dataPtr[i] - m, 0), 255);
-	}
-	return ret;
-}
 
 Mat Simg::Mat::copy()
 {
@@ -151,51 +227,6 @@ Mat Simg::Mat::convertTo(int datatype)
 
 
 
-
-
-
-Mat Simg::Mat::setTo(uchar data)
-{
-	assert(_dataPtr != NULL && _channels == 1);
-	Mat ret(_cols, _rows, _dataType);
-
-	memset(ret._dataPtr, data, ret._dataLength);
-	return ret;
-}
-
-//void Simg::Mat::setPixel(int col, int row, uchar ch1, uchar ch2, uchar ch3)
-//{
-//	assert(col >= 0 && col < _cols&&row >= 0 && row < _rows&&_dataPtr != NULL && _channels == 3);
-//	if (*_pcount > 1)
-//	{
-//		*_pcount--;
-//		//allocate new ptr and memory for dst mat
-//		size_t* tmpPcount = new size_t(1);
-//		uchar* tmpDataPtr = new uchar[_dataLength];
-//		memcpy(tmpDataPtr, _dataPtr, _dataLength);
-//		_dataPtr = tmpDataPtr;
-//		_pcount = tmpPcount;
-//	}
-//	_dataPtr[col * _cellLength + row * _cellLength * _cols] = ch1;
-//	_dataPtr[col * _cellLength + row * _cellLength * _cols + 1] = ch2;
-//	_dataPtr[col * _cellLength + row * _cellLength * _cols + 2] = ch3;
-//}
-
-Mat Simg::Mat::setTo(uchar ch1, uchar ch2, uchar ch3)
-{
-	
-	assert(_dataPtr != NULL && _channels == 3);
-	Mat ret(_cols, _rows, _dataType);
-
-	for (int i = 0; i < _cols * _rows; i++)
-	{
-		ret._dataPtr[i * ret._channels] = ch1;
-		ret._dataPtr[i * ret._channels + 1] = ch2;
-		ret._dataPtr[i * ret._channels + 2] = ch3;
-	}
-
-	return ret;
-}
 
 Mat::~Mat()
 {

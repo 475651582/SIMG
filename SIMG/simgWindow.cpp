@@ -189,6 +189,23 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		}
+		case SIMG_3C32F:
+		{
+			bmpInfo.bmiHeader.biCompression = BI_RGB;
+			bmpInfo.bmiHeader.biBitCount = 24;
+			hdcmem = CreateCompatibleDC(hdc);
+			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			matBuffer = new  uchar[DIBTotalBytes];
+
+
+			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
+			{
+				matBuffer[3 * i] = (uchar)win->_mat._dataPtr[i];
+				matBuffer[3 * i + 1] = (uchar)win->_mat._dataPtr[i];
+				matBuffer[3 * i + 2] = (uchar)win->_mat._dataPtr[i];
+			}
+			break;
+		}
 		default:
 			break;
 		}
