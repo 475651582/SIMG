@@ -76,6 +76,9 @@ namespace Simg
 	const int SIMG_METHOD_RESIZE_NEAREST = 0x00030001;
 	const int SIMG_METHOD_RESIZE_LINEAR = 0x00030002;
 	const int SIMG_METHOD_RESIZE_LINEAR_FAST = 0x00030003;
+	const int SIMG_METHOD_SOBEL_X = 0x00040001;
+	const int SIMG_METHOD_SOBEL_Y = 0x00040002;
+	const int SIMG_METHOD_SOBEL_XY = 0x00040003;
 	const float SIMG_PI = 3.1415926f;
 
 
@@ -99,7 +102,8 @@ namespace Simg
 	void resize_linear_sample(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
 	void resize_linear_sample_fast(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
 
-	void Gaussian(Mat &src, Mat &dst, int kernelSize, float sigma);
+	void Gaussian(Mat &src, Mat &dst, int kernelSize, float sigma = 1.0f);
+	void Sobel(Mat &src, Mat &dst, int method = SIMG_METHOD_SOBEL_XY);
 	
 
 }

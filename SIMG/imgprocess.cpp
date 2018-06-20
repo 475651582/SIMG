@@ -849,5 +849,43 @@ void Simg::Gaussian(Mat & src, Mat & dst, int kernelSize, float sigma)
 		}
 	}
 
-	conv2(src, dst, kernel);
+	conv2(_src, dst, kernel);
+}
+
+void Simg::Sobel(Mat & src, Mat & dst, int method)
+{
+	assert(!src.isEmpty() && src.channels() == 1);
+	assert(src.datatype() == SIMG_1C8U);
+
+	Mat _src = src.copy();
+	Mat kernelX(3, 3, SIMG_1C8S);
+	Mat kernelY(3, 3, SIMG_1C8S);
+
+	kernelX.setPixel(0, 0, -3); kernelX.setPixel(1, 0, 0); kernelX.setPixel(2, 0, 3);
+	kernelX.setPixel(0, 1, -10); kernelX.setPixel(1, 1, 0); kernelX.setPixel(2, 1, 10);
+	kernelX.setPixel(0, 2, -3); kernelX.setPixel(1, 2, 0); kernelX.setPixel(2, 2, 3);
+
+	kernelY.setPixel(0, 0, -3); kernelY.setPixel(1, 0, -10); kernelY.setPixel(2, 0, -3);
+	kernelY.setPixel(0, 1, 0); kernelY.setPixel(1, 1, 0); kernelY.setPixel(2, 1, 0);
+	kernelY.setPixel(0, 2, 3); kernelY.setPixel(1, 2, 10); kernelY.setPixel(2, 2, 3);
+	switch (method)
+	{
+	case SIMG_METHOD_SOBEL_X:
+		conv2(_src, dst, kernelX);
+		break;
+	case SIMG_METHOD_SOBEL_Y:
+		conv2(_src, dst, kernelY);
+		break;
+	case SIMG_METHOD_SOBEL_XY:
+	{
+		Mat tmp1,tmp2;
+		conv2(_src, tmp1, kernelX);
+		conv2(_src, tmp2, kernelY);
+		dst = tmp1 + tmp2;
+		break;
+	}
+		
+	default:
+		break;
+	}
 }
