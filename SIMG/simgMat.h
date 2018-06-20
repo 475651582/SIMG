@@ -149,6 +149,8 @@ namespace Simg
 		
 		template <typename dtype>
 		Mat setTo(dtype ch1, dtype ch2, dtype ch3);	//set whole image to assigned value (3 channel only)
+		Mat extendTo(int col, int row);	//extend the mat to a certain size to speed up algorithm in a certain circumstance
+		
 
 		~Mat();
 

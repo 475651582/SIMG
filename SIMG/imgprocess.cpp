@@ -71,6 +71,57 @@ void convertConvKernel(Mat Kernel, Mat src, int *directArray, dtype *valueArray,
 	directNum = 9;*/
 }
 
+template<typename dtype>
+void convertConvKernel2(Mat Kernel, int srcX, int *directArray, dtype *valueArray, size_t &directNum)
+{
+	assert(!Kernel.isEmpty() && Kernel.cols() % 2 != 0 && Kernel.rows() % 2 != 0);
+
+	size_t kernelLength = Kernel.cols() * Kernel.rows();
+	dtype *kernelBuffer = (dtype*)Kernel.dataPtr();
+	int anchorPointX = Kernel.cols() / 2;
+	int anchorPointY = Kernel.rows() / 2;
+	directNum = 0;
+	for (size_t i = 0; i < kernelLength; i++)
+	{
+		if (kernelBuffer[i] != 0)
+		{
+			int x = i % Kernel.cols();
+			int y = i / Kernel.cols();
+			int direct = (x - anchorPointX) + (y - anchorPointY) * (srcX);
+			directArray[directNum] = direct;
+			valueArray[directNum++] = kernelBuffer[i];
+		}
+	}
+
+	/*directArray[0] = 0;
+	directArray[1] = -1;
+	directArray[2] = 1;
+	directArray[3] = -src.cols();
+	directArray[4] = src.cols();
+	directArray[5] = 1 - src.cols();
+	directArray[6] = 1 + src.cols();
+	directArray[7] = -1 - src.cols();
+	directArray[8] = -1 + src.cols();
+	directNum = 9;*/
+}
+
+
+int findSmallestPow2(int x)
+{
+	int n = 0;
+	int m = 1;
+	while (true)
+	{
+		n++;
+		m = m << 1;
+		if (m >= x)
+		{
+			return n;
+		}
+		
+	}
+}
+
 void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 {
 	
@@ -229,8 +280,17 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 	assert(!src.isEmpty() && src.channels() == 1);
 	assert(src.datatype() == SIMG_1C8U);
 	assert(kernel.datatype() == SIMG_1C8S || kernel.datatype() == SIMG_1C32F);
+
+
+	int powX = findSmallestPow2(src.cols());
+	int powY = findSmallestPow2(src.rows());
+
+	//Mat _src = src.extendTo(1 << powX, src.rows());
 	Mat _src = src.copy();
-	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
+	
+
+	
+
 
 	switch (kernel.datatype())
 	{
@@ -241,25 +301,59 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 
 		int x = 0, y = 0;
 		size_t directNum = 0;
-		convertConvKernel(kernel, src, directArray, convArray, directNum);
+		
+		int padX = kernel.cols();
+		int padY = kernel.rows();
+
+		int srcCols = _src.cols();
+		int srcRows = _src.rows();
+
+
+		int padSrcCols = srcCols + 2 * padX;
+		int padSrcRows = srcRows + 2 * padY;
+		int padDataLength = padSrcCols * padSrcRows;
+
+		dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
 
 		uchar *srcBuffer = _src.dataPtr();
 		uchar *dstBuffer = dst.dataPtr();
-		for (int i = 0; i < src.cols()*src.rows(); i++)
+		
+
+		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
+
+		uchar *padSrcBuffer = new uchar[padDataLength];
+		memset(padSrcBuffer, 0, padDataLength);
+		
+		for (int i = padY; i < padSrcRows - padY; i++)
+		{
+			int srcY = i - padY;
+			//memcpy(padSrcBuffer + padX + i * padSrcCols, srcBuffer + srcY * srcCols, srcCols);
+			padSrcBuffer[100 + srcY * padSrcCols] = 255;
+		}
+
+		memcpy(dstBuffer, padSrcBuffer, padDataLength);
+		break;
+
+		uchar *ULpadPtr = padSrcBuffer + padX + padY * padSrcCols;
+
+		for (int i = 0; i < padDataLength; i++)
 		{
 			int sum = 0;
 			for (size_t j = 0; j < directNum; j++)
 			{
 				int index = i + directArray[j];
-				x = index % src.cols();
-				y = index / src.cols();
-				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
-				int neighbor = srcBuffer[index];
+				
+				//x = index & (powX - 1);
+				//y = index >> powX;
+			
+				//if (x < 0 || y < 0 || x > srcCols - 1 || y > srcRows - 1)  continue;  //boundary test
+				int neighbor = ULpadPtr[index];
 				sum += neighbor * convArray[j];
 			}
 			dstBuffer[i] = MAX(MIN(sum, 255), 0);
 		}
 		delete directArray; directArray = NULL;
+		delete padSrcBuffer; padSrcBuffer = NULL;
 		delete convArray; convArray = NULL;
 		break;
 	}
@@ -289,6 +383,7 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 				int index = i + directArray[j];
 				x = index % src.cols();
 				y = index / src.cols();
+
 				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
 				int neighbor = srcBuffer[index];
 				sum += neighbor * convArrayFast[j];

@@ -228,6 +228,19 @@ Mat Simg::Mat::convertTo(int datatype)
 
 
 
+Mat Simg::Mat::extendTo(int col, int row)
+{
+	assert(col >= _cols && row >= _rows);
+	Mat ret(col, row, _dataType);
+	for (size_t i = 0; i < _rows; i++)
+	{
+		memcpy(ret._dataPtr + i * col * _cellLength * _channels, _dataPtr + i * _cols * _cellLength * _channels, _cellLength * _channels * _cols);
+	}
+
+	return ret;
+}
+
+
 Mat::~Mat()
 {
 
@@ -314,7 +327,7 @@ int Mat::init()
 		break;
 	}
 
-	_dataLength = _matLength * _cellLength;
+	_dataLength = _matLength * _cellLength * _channels;
 	_colDataLength = _cols * _cellLength;
 	_rowDataLength = _rows * _cellLength;
 
