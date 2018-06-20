@@ -4,6 +4,7 @@
 
 namespace Simg
 {
+	
 	class Histogram
 	{
 	public:
@@ -75,6 +76,7 @@ namespace Simg
 	const int SIMG_METHOD_RESIZE_NEAREST = 0x00030001;
 	const int SIMG_METHOD_RESIZE_LINEAR = 0x00030002;
 	const int SIMG_METHOD_RESIZE_LINEAR_FAST = 0x00030003;
+	const float SIMG_PI = 3.1415926f;
 
 
 	void rgb2gray(Mat &src,Mat &dst, int methods = 0);
@@ -83,7 +85,7 @@ namespace Simg
 	void rgb2lab_pixelStandard(uchar r, uchar g, uchar b, uchar &lab_l, uchar &lab_a, uchar &lab_b);
 	void dilate(Mat &src, Mat &dst, Mat kernel);
 	void erode(Mat &src, Mat &dst, Mat kernel);
-	void conv(Mat &src, Mat &dst, Mat kernel, int FORMAT);
+
 	void conv2(Mat &src, Mat &dst, Mat kernel);
 	void conv2f(Mat &src, Mat &dst, Mat kernel);
 
@@ -96,6 +98,8 @@ namespace Simg
 	void resize_nearest_neighbor_sample(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
 	void resize_linear_sample(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
 	void resize_linear_sample_fast(uchar* srcBuffer, int srcCols, int srcRows, uchar* dstBuffer, int dstCols, int dstRows, int channels);
+
+	void Gaussian(Mat &src, Mat &dst, int kernelSize, float sigma);
 	
 
 }

@@ -255,27 +255,27 @@ int Mat::init()
 	switch (_dataType)
 	{
 	case SIMG_1C8U:
-		_cellLength = 1;
+		_cellLength = sizeof(uchar);
 		_channels = 1;
 		break;
 	case SIMG_1C8S:
-		_cellLength = 1;
+		_cellLength = sizeof(char);
 		_channels = 1;
 		break;
 	case SIMG_1C16U:
-		_cellLength = 2;
+		_cellLength = sizeof(unsigned short);
 		_channels = 1;
 		break;
 	case SIMG_1C16S:
-		_cellLength = 2;
+		_cellLength = sizeof(short);
 		_channels = 1;
 		break;
 	case SIMG_1C32F:
-		_cellLength = 4;
+		_cellLength = sizeof(float);
 		_channels = 1;
 		break;
 	case SIMG_1C64F:
-		_cellLength = 8;
+		_cellLength = sizeof(double);
 		_channels = 1;
 		break;
 	case SIMG_NULL:
@@ -284,27 +284,27 @@ int Mat::init()
 		break;
 
 	case SIMG_3C8U:
-		_cellLength = 3;
+		_cellLength = sizeof(uchar);
 		_channels = 3;
 		break;
 	case SIMG_3C8S:
-		_cellLength = 3;
+		_cellLength = sizeof(char);
 		_channels = 3;
 		break;
 	case SIMG_3C16U:
-		_cellLength = 6;
+		_cellLength = sizeof(unsigned short);
 		_channels = 3;
 		break;
 	case SIMG_3C16S:
-		_cellLength = 6;
+		_cellLength = sizeof(short);
 		_channels = 3;
 		break;
 	case SIMG_3C32F:
-		_cellLength = 12;
+		_cellLength = sizeof(float);
 		_channels = 3;
 		break;
 	case SIMG_3C64F:
-		_cellLength = 24;
+		_cellLength = sizeof(double);
 		_channels = 3;
 		break;
 

@@ -222,85 +222,7 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 	}
 }
 
-void Simg::conv(Mat & src, Mat & dst, Mat kernel, int FORMAT)
-{
-	assert(!src.isEmpty() && src.channels() == 1); //consider 1 channel first
-	assert(kernel.datatype() == FORMAT);
-	Mat _src = src.copy();
-	dst = Mat(src.cols(), src.rows(), FORMAT);
 
-	switch (FORMAT)
-	{
-	case SIMG_1C8U:
-	{
-		int *directArray = new int[kernel.cols()*kernel.rows()];
-		uchar *convArray = new uchar[kernel.cols()*kernel.rows()];
-
-		int x = 0, y = 0;
-		size_t directNum = 0;
-		convertConvKernel(kernel, src, directArray, convArray, directNum);
-
-		uchar *srcBuffer = _src.dataPtr();
-		uchar *dstBuffer = dst.dataPtr();
-		for (int i = 0; i < src.cols()*src.rows(); i++)
-		{
-			int sum = 0;
-			for (size_t j = 0; j < directNum; j++)
-			{
-				int index = i + directArray[j];
-				x = index % src.cols();
-				y = index / src.cols();
-				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
-				int neighbor = srcBuffer[index];
-				sum += neighbor * convArray[j];
-			}
-			dstBuffer[i] = MAX(MIN(sum, 255), 0);
-		}
-		delete directArray; directArray = NULL;
-		delete convArray; convArray = NULL;
-	}
-	case SIMG_1C32F:
-	{
-		int *directArray = new int[kernel.cols()*kernel.rows()];
-		float *convArray = new float[kernel.cols()*kernel.rows()];
-		int *convArrayFast = new int[kernel.cols()*kernel.rows()];
-
-		int x = 0, y = 0;
-		size_t directNum = 0;
-		convertConvKernel(kernel, src, directArray, convArray, directNum);
-		for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
-		{
-			convArrayFast[i] = (int)(convArray[i]) << 10;
-		}
-
-
-		uchar *srcBuffer = _src.dataPtr();
-		uchar *dstBuffer = dst.dataPtr();
-		for (int i = 0; i < src.cols()*src.rows(); i++)
-		{
-
-			int sum = 0;
-			for (size_t j = 0; j < directNum; j++)
-			{
-				int index = i + directArray[j];
-				x = index % src.cols();
-				y = index / src.cols();
-				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
-				int neighbor = srcBuffer[index];
-				sum += neighbor * convArrayFast[j];
-			}
-			sum = sum >> 10;
-			dstBuffer[i] = MAX(MIN(sum, 255), 0);
-		}
-
-		delete directArray; directArray = NULL;
-		delete convArray; convArray = NULL;
-	}
-	default:
-		break;
-	}
-	
-}
 
 void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 {
@@ -891,4 +813,41 @@ void Simg::resize_linear_sample_fast(uchar * srcBuffer, int srcCols, int srcRows
 		
 	}
 
+}
+
+void Simg::Gaussian(Mat & src, Mat & dst, int kernelSize, float sigma)
+{
+	assert(!src.isEmpty() && src.channels() == 1 && kernelSize > 0 && kernelSize % 2 == 1);
+	assert(src.datatype() == SIMG_1C8U);
+	
+	Mat _src = src.copy();
+	Mat kernel(kernelSize, kernelSize, SIMG_1C32F);
+	dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
+
+	int center = kernelSize / 2;
+	double sum = 0;
+	for (int i = 0; i < kernelSize; i++)
+	{
+		double x2 = pow(i - center, 2);
+		for (int j = 0; j < kernelSize; j++)
+		{
+			double y2 = pow(j - center, 2);
+			double g = exp(-(x2 + y2) / (2 * sigma * sigma));
+			sum += g;
+			kernel.setPixel(i, j, g);	
+		}
+	}
+	for (size_t i = 0; i < kernelSize; i++)
+	{
+		
+		for (size_t j = 0; j < kernelSize; j++)
+		{
+			vector<float> d;
+			kernel.getPixel(i, j, d);
+			kernel.setPixel(i, j, d[0] / sum);
+			kernel.getPixel(i, j, d);
+		}
+	}
+
+	conv2(src, dst, kernel);
 }

@@ -138,6 +138,9 @@ namespace Simg
 		void setPixel(int col, int row, dtype data);
 
 		template <typename dtype>
+		void getPixel(int col, int row, vector<dtype>& dst);
+
+		template <typename dtype>
 		void setPixel(int col, int row, dtype ch1, dtype ch2, dtype ch3); //set pixel to assigned value(3 channel only)
 
 		template <typename dtype>
@@ -231,6 +234,21 @@ namespace Simg
 			break;
 		}
 
+		
+	}
+
+	template<typename dtype>
+	inline void Mat::getPixel(int col, int row, vector<dtype>& dst)
+	{
+		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL);
+		assert(sizeof(dtype) == _cellLength);
+		dst.clear();
+		dtype * ptr = (dtype*)_dataPtr;
+		for (size_t i = 0; i < _channels; i++)
+		{
+			dtype data = ptr[i + (col + row * _cols) *_channels];
+			dst.push_back(data);
+		}
 		
 	}
 
