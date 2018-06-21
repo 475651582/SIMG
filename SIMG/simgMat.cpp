@@ -314,7 +314,7 @@ int Mat::init()
 		break;
 	}
 
-	_dataLength = _matLength * _cellLength;
+	_dataLength = _matLength * _cellLength * _channels;
 	_colDataLength = _cols * _cellLength;
 	_rowDataLength = _rows * _cellLength;
 

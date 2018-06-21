@@ -41,21 +41,23 @@ Mat Simg::readBMP(const char *path)
 	w = bi.biWidth;                            //获取图像的宽
 	h = bi.biHeight;                           //获取图像的高
 	bitSize = bi.biSizeImage;                  //获取图像的size
-
+	
 
 	switch (bi.biBitCount)
 	{
 	case 24:	//24位图
 	{
 		channels = 3;
+		int lineByte = (w * bi.biBitCount / 8 + 3) / 4 * 4;
 
-		buf = new uchar[w * h * channels];                //分配缓冲区大小		
-		fread(buf, 1, w * h * channels, fp);                  //开始读取数据
+		buf = new uchar[lineByte * h];                //分配缓冲区大小		
+		//fread(buf, 1, w * h * channels, fp);                  //开始读取数据
+		fread(buf, 1,lineByte * h, fp);                  //开始读取数据
 		ret = Mat(w, h, SIMG_3C8U);
 		uchar* retBuffer = ret.dataPtr();
 		for (size_t i = 0; i < h; i++)
 		{
-			memcpy(retBuffer + i * w * channels, buf + (h - i - 1) * w * channels, w * channels);  //copy bmp data to the new Mat, need to convert the direction
+			memcpy(retBuffer + i * w * channels, buf + (h - i - 1) * lineByte, w * channels);  //copy bmp data to the new Mat, need to convert the direction
 		}
 
 		
