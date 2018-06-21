@@ -154,21 +154,28 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 		bmpInfo.bmiHeader.biWidth = win->_mat._cols;//���
 		bmpInfo.bmiHeader.biHeight = -win->_mat._rows;//�߶�
 		bmpInfo.bmiHeader.biPlanes = 1;
-		
 
 		switch (win->_mat._dataType)
 		{
 		case SIMG_3C8U:
 		{
+			
+
 			bmpInfo.bmiHeader.biBitCount = 24;
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
+
+			int lineByte = (bmpInfo.bmiHeader.biWidth * bmpInfo.bmiHeader.biBitCount / 8 + 3) / 4 * 4;
 			
 			hdcmem = CreateCompatibleDC(hdc);
-			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			DIBTotalBytes = win->_mat._rows * lineByte;
 			matBuffer = new  uchar[DIBTotalBytes];
 
 		
-			memcpy(matBuffer, win->_mat._dataPtr, DIBTotalBytes);
+			
+			for (size_t i = 0; i <  win->_mat._rows; i++)
+			{
+				memcpy(matBuffer + i * lineByte, win->_mat._dataPtr + i * win->_mat._cols * 3, win->_mat._cols * 3);
+			}
 			break;
 		}
 
@@ -177,15 +184,18 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
 			bmpInfo.bmiHeader.biBitCount = 24;
 			hdcmem = CreateCompatibleDC(hdc);
-			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			int lineByte = (bmpInfo.bmiHeader.biWidth * bmpInfo.bmiHeader.biBitCount / 8 + 3) / 4 * 4;
+			DIBTotalBytes = win->_mat._rows * lineByte;
 			matBuffer = new  uchar[DIBTotalBytes];
 
 					
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
-				matBuffer[3 * i] = (uchar) win->_mat._dataPtr[i];
-				matBuffer[3 * i + 1] = (uchar)win->_mat._dataPtr[i];
-				matBuffer[3 * i + 2] = (uchar)win->_mat._dataPtr[i];
+				int x = i % win->_mat._cols;
+				int y = i / win->_mat._cols;
+				matBuffer[3 * x + y * lineByte] = (uchar) win->_mat._dataPtr[i];
+				matBuffer[3 * x + y * lineByte + 1] = (uchar)win->_mat._dataPtr[i];
+				matBuffer[3 * x + y * lineByte + 2] = (uchar)win->_mat._dataPtr[i];
 			}
 			break;
 		}
@@ -194,7 +204,9 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
 			bmpInfo.bmiHeader.biBitCount = 24;
 			hdcmem = CreateCompatibleDC(hdc);
-			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			int lineByte = (bmpInfo.bmiHeader.biWidth * bmpInfo.bmiHeader.biBitCount / 8 + 3) / 4 * 4;
+
+			DIBTotalBytes = win->_mat._rows * lineByte;
 			matBuffer = new  uchar[DIBTotalBytes];
 			vector<float> matMax, matMin;
 			win->_mat.getMax(matMax);
@@ -205,11 +217,14 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			float maxValue = matMax[0];
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
+				int x = i % win->_mat._cols;
+				int y = i / win->_mat._cols;
+
 				float *ptr = (float*)win->_mat._dataPtr;
 				uchar grayData = (uchar)((ptr[i] - minValue) / (maxValue - minValue) * UCHAR_MAX);
-				matBuffer[3 * i] = grayData;
-				matBuffer[3 * i + 1] = grayData;
-				matBuffer[3 * i + 2] = grayData;
+				matBuffer[3 * x + y * lineByte] = grayData;
+				matBuffer[3 * x + y * lineByte + 1] = grayData;
+				matBuffer[3 * x + y * lineByte + 2] = grayData;
 			}
 			break;
 		}
@@ -218,7 +233,9 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
 			bmpInfo.bmiHeader.biBitCount = 24;
 			hdcmem = CreateCompatibleDC(hdc);
-			DIBTotalBytes = win->_mat._rows * win->_mat._cols * 3;
+			int lineByte = (bmpInfo.bmiHeader.biWidth * bmpInfo.bmiHeader.biBitCount / 8 + 3) / 4 * 4;
+
+			DIBTotalBytes = win->_mat._rows * lineByte;
 			matBuffer = new  uchar[DIBTotalBytes];
 			vector<float> matMax, matMin;
 			win->_mat.getMax(matMax);
@@ -231,13 +248,16 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
+				int x = i % win->_mat._cols;
+				int y = i / win->_mat._cols;
+
 				float *ptr = (float*)win->_mat._dataPtr;
 				uchar dataB = (uchar)((ptr[3*i] - minValueB) / (maxValueB - minValueB) * UCHAR_MAX);
 				uchar dataG = (uchar)((ptr[3 * i + 1] - minValueG) / (maxValueG - minValueG) * UCHAR_MAX);
 				uchar dataR = (uchar)((ptr[3 * i + 2] - minValueR) / (maxValueR - minValueR) * UCHAR_MAX);
-				matBuffer[3 * i] = dataB;
-				matBuffer[3 * i + 1] = dataG;
-				matBuffer[3 * i + 2] = dataR;
+				matBuffer[3 * x + y * lineByte] = dataB;
+				matBuffer[3 * x + y * lineByte + 1] = dataG;
+				matBuffer[3 * x + y * lineByte + 2] = dataR;
 			}
 			break;
 		}
