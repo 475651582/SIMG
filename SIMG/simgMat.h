@@ -128,7 +128,6 @@ namespace Simg
 		template <typename dtype>
 		void getMin(vector<dtype>& dst);
 
-		uchar* row(int indRow);	//reserved!
 		int rows() { return _rows; };
 		int cols() { return _cols; };
 		int channels() { return _channels; };

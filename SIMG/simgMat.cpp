@@ -164,29 +164,7 @@ Mat Simg::Mat::copy()
 	return ret;
 }
 
-uchar * Mat::row(int indRow)
-{
-	//if (*_pcount > 1)
-	//{
-	//	*_pcount--;
-	//	//////allocate new ptr and memory for dst mat
-	//	size_t* tmpPcount = new size_t(1);
-	//	uchar* tmpDataPtr = new uchar[_dataLength];
-	//	memcpy(tmpDataPtr, _dataPtr, _dataLength);
-	//	_dataPtr = tmpDataPtr;
-	//	_pcount = tmpPcount;
-	//}
-	//if (SIMG_FORMAT_IMG_BMP == _originalFormat)
-	//{
-	//	//bmp format start from lowerleft pixel
-	//	return _dataPtr + _colDataLength * (_rows - indRow - 1);
-	//}
-	//else
-	//{
-	//	return _dataPtr + _colDataLength * indRow;
-	//}
-	return nullptr;
-}
+
 
 uchar * Mat::dataPtr()
 {

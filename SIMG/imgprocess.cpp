@@ -105,6 +105,32 @@ void convertConvKernel2(Mat Kernel, int srcX, int *directArray, dtype *valueArra
 	directNum = 9;*/
 }
 
+template<typename dtype>
+dtype* getPaddingMemory(dtype* srcBuffer, int srcCols, int srcRows, int padX, int padY, int &ULpadPtrStarter)
+{
+
+	
+
+	int padSrcCols = srcCols + 2 * padX;
+	int padSrcRows = srcRows + 2 * padY;
+	int padDataLength = padSrcCols * padSrcRows;
+	int dataLength = srcCols * srcRows;
+
+
+	dtype *padSrcBuffer = new dtype[padDataLength];
+
+	memset(padSrcBuffer, 0, padDataLength);
+
+	for (int i = padY; i < padSrcRows - padY; i++)
+	{
+		int srcY = i - padY;
+		memcpy(padSrcBuffer + padX + i * padSrcCols, srcBuffer + srcY * srcCols, srcCols * sizeof(dtype));
+	}
+	ULpadPtrStarter = padX + padY * padSrcCols;
+
+	return padSrcBuffer;
+}
+
 
 int findSmallestPow2(int x)
 {
@@ -282,72 +308,49 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 	assert(kernel.datatype() == SIMG_1C8S || kernel.datatype() == SIMG_1C32F);
 
 
-	int powX = findSmallestPow2(src.cols());
-	int powY = findSmallestPow2(src.rows());
-
-	//Mat _src = src.extendTo(1 << powX, src.rows());
 	Mat _src = src.copy();
-	
 
-	
+	int x = 0, y = 0;
+	size_t directNum = 0;
 
+	int padX = kernel.cols();
+	int padY = kernel.rows();
+
+	int srcCols = _src.cols();
+	int srcRows = _src.rows();
+
+
+	int padSrcCols = srcCols + 2 * padX;
+	int padSrcRows = srcRows + 2 * padY;
+	int padDataLength = padSrcCols * padSrcRows;
+	int dataLength = srcCols * srcRows;
+
+	dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
+
+	uchar *srcBuffer = _src.dataPtr();
+	uchar *dstBuffer = dst.dataPtr();
+	
+	//pad up memory to avoid boundary check to speed up
+	int ULpadPtrStarter = 0;
+	uchar* padSrcBuffer = getPaddingMemory(srcBuffer, srcCols, srcRows, padX, padY, ULpadPtrStarter);
+	uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
 
 	switch (kernel.datatype())
 	{
 	case SIMG_1C8S:
 	{
 		int *directArray = new int[kernel.cols()*kernel.rows()];
-		char *convArray = new char[kernel.cols()*kernel.rows()];
-
-		int x = 0, y = 0;
-		size_t directNum = 0;
-		
-		int padX = kernel.cols();
-		int padY = kernel.rows();
-
-		int srcCols = _src.cols();
-		int srcRows = _src.rows();
-
-
-		int padSrcCols = srcCols + 2 * padX;
-		int padSrcRows = srcRows + 2 * padY;
-		int padDataLength = padSrcCols * padSrcRows;
-
-		dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
-
-		uchar *srcBuffer = _src.dataPtr();
-		uchar *dstBuffer = dst.dataPtr();
-		
-
+		char *convArray = new char[kernel.cols()*kernel.rows()];	
 		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
-
-		uchar *padSrcBuffer = new uchar[padDataLength];
-		memset(padSrcBuffer, 0, padDataLength);
-		
-		for (int i = padY; i < padSrcRows - padY; i++)
-		{
-			int srcY = i - padY;
-			//memcpy(padSrcBuffer + padX + i * padSrcCols, srcBuffer + srcY * srcCols, srcCols);
-			padSrcBuffer[100 + srcY * padSrcCols] = 255;
-		}
-
-		memcpy(dstBuffer, padSrcBuffer, padDataLength);
-		break;
-
-		uchar *ULpadPtr = padSrcBuffer + padX + padY * padSrcCols;
-
-		for (int i = 0; i < padDataLength; i++)
+		for (int i = 0; i < dataLength; i++)
 		{
 			int sum = 0;
+			int index = 0;
+			int neighbor = 0;
 			for (size_t j = 0; j < directNum; j++)
 			{
-				int index = i + directArray[j];
-				
-				//x = index & (powX - 1);
-				//y = index >> powX;
-			
-				//if (x < 0 || y < 0 || x > srcCols - 1 || y > srcRows - 1)  continue;  //boundary test
-				int neighbor = ULpadPtr[index];
+				index = i + directArray[j];
+				neighbor = ULpadPtr[index];	
 				sum += neighbor * convArray[j];
 			}
 			dstBuffer[i] = MAX(MIN(sum, 255), 0);
@@ -363,29 +366,20 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 		int *directArray = new int[kernel.cols()*kernel.rows()];
 		float *convArray = new float[kernel.cols()*kernel.rows()];
 		int *convArrayFast = new int[kernel.cols()*kernel.rows()];
-		
-
-		int x = 0, y = 0;
-		size_t directNum = 0;
-		convertConvKernel(kernel, src, directArray, convArray, directNum);
+		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
 		for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
 		{
 			convArrayFast[i] = (int)(convArray[i] * 1024);
 		}
-
-		uchar *srcBuffer = _src.dataPtr();
-		uchar *dstBuffer = dst.dataPtr();
-		for (int i = 0; i < src.cols()*src.rows(); i++)
+		for (int i = 0; i < dataLength; i++)
 		{
 			int sum = 0;
+			int index = 0;
+			int neighbor = 0;
 			for (size_t j = 0; j < directNum; j++)
 			{
-				int index = i + directArray[j];
-				x = index % src.cols();
-				y = index / src.cols();
-
-				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //boundary test
-				int neighbor = srcBuffer[index];
+				index = i + directArray[j];
+				neighbor = ULpadPtr[index];
 				sum += neighbor * convArrayFast[j];
 			}
 			sum = sum >> 10;
@@ -393,7 +387,9 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 
 		}
 		delete directArray; directArray = NULL;
+		delete padSrcBuffer; padSrcBuffer = NULL;
 		delete convArray; convArray = NULL;
+		delete convArrayFast; convArrayFast = NULL;
 		break;
 	}		
 
