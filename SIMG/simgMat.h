@@ -128,6 +128,8 @@ namespace Simg
 		template <typename dtype>
 		void getMin(vector<dtype>& dst);
 
+		template<typename dtype> dtype& at(int i, int j, int ch = 0);
+
 		int rows() { return _rows; };
 		int cols() { return _cols; };
 		int channels() { return _channels; };
@@ -146,8 +148,7 @@ namespace Simg
 		void setTo(dtype data);	//set whole image to assigned value (single channel only)
 
 		
-		template <typename dtype>
-		Mat setTo(dtype ch1, dtype ch2, dtype ch3);	//set whole image to assigned value (3 channel only)
+	
 		Mat extendTo(int col, int row);	//extend the mat to a certain size to speed up algorithm in a certain circumstance
 		
 
@@ -184,7 +185,7 @@ namespace Simg
 
 		size_t* _pcount; //copy ref counter
 
-
+		void refered();
 
 	};
 
@@ -193,17 +194,7 @@ namespace Simg
 	{
 		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && _channels == 1);
 
-		if (*_pcount > 1)
-		{
-			*_pcount--;
-			//allocate new ptr and memory for dst mat
-			size_t* tmpPcount = new size_t(1);
-			uchar* tmpDataPtr = new uchar[_dataLength];
-			memcpy(tmpDataPtr, _dataPtr, _dataLength);
-			_dataPtr = tmpDataPtr;
-			_pcount = tmpPcount;
-		}
-
+		refered();
 		
 		switch (_dataType)
 		{
@@ -245,7 +236,7 @@ namespace Simg
 		assert(sizeof(dtype) == _cellLength);
 		dst.clear();
 		dtype * ptr = (dtype*)_dataPtr;
-		for (size_t i = 0; i < _channels; i++)
+		for (int i = 0; i < _channels; i++)
 		{
 			dtype data = ptr[i + (col + row * _cols) *_channels];
 			dst.push_back(data);
@@ -258,16 +249,7 @@ namespace Simg
 	{
 		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && _channels == 3);
 
-		if (*_pcount > 1)
-		{
-			*_pcount--;
-			//allocate new ptr and memory for dst mat
-			size_t* tmpPcount = new size_t(1);
-			uchar* tmpDataPtr = new uchar[_dataLength];
-			memcpy(tmpDataPtr, _dataPtr, _dataLength);
-			_dataPtr = tmpDataPtr;
-			_pcount = tmpPcount;
-		}
+		refered();
 
 
 		switch (_dataType)
@@ -315,16 +297,7 @@ namespace Simg
 	{
 
 		assert(_dataPtr != NULL && _channels == 1);
-		if (*_pcount > 1)
-		{
-			*_pcount--;
-			//allocate new ptr and memory for dst mat
-			size_t* tmpPcount = new size_t(1);
-			uchar* tmpDataPtr = new uchar[_dataLength];
-			memcpy(tmpDataPtr, _dataPtr, _dataLength);
-			_dataPtr = tmpDataPtr;
-			_pcount = tmpPcount;
-		}
+		refered();
 
 		for (int i = 0; i < _cols *_rows; i++)
 		{
@@ -362,57 +335,7 @@ namespace Simg
 		}
 	}
 
-	template<typename dtype>
-	inline Mat Mat::setTo(dtype ch1, dtype ch2, dtype ch3)
-	{
-		assert(_dataPtr != NULL && _channels == 3);
-		Mat ret(_cols, _rows, _dataType);
 
-		for (int i = 0; i < _cols *_rows; i++)
-		{
-
-			switch (_dataType)
-			{
-			case SIMG_3C8U:
-			{
-				uchar* ptr = (uchar*)_dataPtr;
-				ptr[3 * i] = (uchar)ch1;
-				ptr[3 * i + 1] = (uchar)ch2;
-				ptr[3 * i + 2] = (uchar)ch3;
-
-				break;
-			}
-			case SIMG_3C8S:
-			{
-				char* ptr = (char*)_dataPtr;
-				ptr[3 * i] = (char)ch1;
-				ptr[3 * i + 1] = (char)ch2;
-				ptr[3 * i + 2] = (char)ch3;
-				break;
-			}
-			case SIMG_3C32F:
-			{
-				float* ptr = (float*)_dataPtr;
-				ptr[3 * i] = (float)ch1;
-				ptr[3 * i + 1] = (float)ch2;
-				ptr[3 * i + 2] = (float)ch3;
-				break;
-			}
-			case SIMG_3C64F:
-			{
-				double* ptr = (double*)_dataPtr;
-				ptr[3 * i] = (double)ch1;
-				ptr[3 * i + 1] = (double)ch2;
-				ptr[3 * i + 2] = (double)ch3;
-				break;
-			}
-			default:
-				break;
-			}
-
-		}
-		return ret;
-	}
 
 	template<typename dtype>
 	inline Mat Mat::operator+(dtype data)
@@ -769,6 +692,17 @@ namespace Simg
 		}
 
 	}
-	
+
+	template<typename dtype>
+	inline dtype & Mat::at(int col, int row, int ch)
+	{
+		// TODO: 在此处插入 return 语句
+		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && ch < _channels);
+		refered();
+		dtype* ptr = (dtype*)_dataPtr;
+		return ptr[(col + row * _cols) * _channels + ch];
+	}
+
+
 }
 

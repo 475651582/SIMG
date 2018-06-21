@@ -210,7 +210,7 @@ Mat Simg::Mat::extendTo(int col, int row)
 {
 	assert(col >= _cols && row >= _rows);
 	Mat ret(col, row, _dataType);
-	for (size_t i = 0; i < _rows; i++)
+	for (int i = 0; i < _rows; i++)
 	{
 		memcpy(ret._dataPtr + i * col * _cellLength * _channels, _dataPtr + i * _cols * _cellLength * _channels, _cellLength * _channels * _cols);
 	}
@@ -310,4 +310,18 @@ int Mat::init()
 	_rowDataLength = _rows * _cellLength;
 
 	return 0;
+}
+
+void Simg::Mat::refered()
+{
+	if (*_pcount > 1)
+	{
+		*_pcount--;
+		//allocate new ptr and memory for dst mat
+		size_t* tmpPcount = new size_t(1);
+		uchar* tmpDataPtr = new uchar[_dataLength];
+		memcpy(tmpDataPtr, _dataPtr, _dataLength);
+		_dataPtr = tmpDataPtr;
+		_pcount = tmpPcount;
+	}
 }

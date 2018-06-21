@@ -928,10 +928,10 @@ void Simg::Gaussian(Mat & src, Mat & dst, int kernelSize, float sigma)
 			kernel.setPixel(i, j, g);	
 		}
 	}
-	for (size_t i = 0; i < kernelSize; i++)
+	for (int i = 0; i < kernelSize; i++)
 	{
 		
-		for (size_t j = 0; j < kernelSize; j++)
+		for (int j = 0; j < kernelSize; j++)
 		{
 			vector<float> d;
 			kernel.getPixel(i, j, d);

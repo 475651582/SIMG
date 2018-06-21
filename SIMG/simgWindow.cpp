@@ -172,7 +172,7 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 		
 			
-			for (size_t i = 0; i <  win->_mat._rows; i++)
+			for (int i = 0; i <  win->_mat._rows; i++)
 			{
 				memcpy(matBuffer + i * lineByte, win->_mat._dataPtr + i * win->_mat._cols * 3, win->_mat._cols * 3);
 			}
