@@ -1,8 +1,15 @@
+/*******************************************************************
+*
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.05
+*	Brief: window use for showing the images
+*
+******************************************************************/
+
+
 #include "stdafx.h"
 #include "simgWindow.h"
-
-
-
 
 
 

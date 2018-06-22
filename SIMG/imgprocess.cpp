@@ -1,3 +1,13 @@
+/*******************************************************************
+*
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.07
+*	Brief: realized some basic image processing algorithm based on
+*	Mat class
+*
+******************************************************************/
+
 #include "stdafx.h"
 #include "imgprocess.h"
 
@@ -24,17 +34,6 @@ void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, size_t &directNu
 			directArray[directNum++] = direct;
 		}
 	}
-
-	/*directArray[0] = 0;
-	directArray[1] = -1;
-	directArray[2] = 1;
-	directArray[3] = -src.cols();
-	directArray[4] = src.cols();
-	directArray[5] = 1 - src.cols();
-	directArray[6] = 1 + src.cols();
-	directArray[7] = -1 - src.cols();
-	directArray[8] = -1 + src.cols();
-	directNum = 9;*/
 }
 
 template<typename dtype>
@@ -58,17 +57,6 @@ void convertConvKernel(Mat Kernel, Mat src, int *directArray, dtype *valueArray,
 			valueArray[directNum++] = kernelBuffer[i];
 		}
 	}
-
-	/*directArray[0] = 0;
-	directArray[1] = -1;
-	directArray[2] = 1;
-	directArray[3] = -src.cols();
-	directArray[4] = src.cols();
-	directArray[5] = 1 - src.cols();
-	directArray[6] = 1 + src.cols();
-	directArray[7] = -1 - src.cols();
-	directArray[8] = -1 + src.cols();
-	directNum = 9;*/
 }
 
 template<typename dtype>
@@ -93,16 +81,6 @@ void convertConvKernel2(Mat Kernel, int srcX, int *directArray, dtype *valueArra
 		}
 	}
 
-	/*directArray[0] = 0;
-	directArray[1] = -1;
-	directArray[2] = 1;
-	directArray[3] = -src.cols();
-	directArray[4] = src.cols();
-	directArray[5] = 1 - src.cols();
-	directArray[6] = 1 + src.cols();
-	directArray[7] = -1 - src.cols();
-	directArray[8] = -1 + src.cols();
-	directNum = 9;*/
 }
 
 template<typename dtype>
@@ -750,7 +728,6 @@ int * Simg::Histogram::dataPtr()
 
 void Simg::resize(Mat & src, Mat & dst, Size dsize, int method)
 {
-	//assert(src.channels() == 1); //consider single channel first
 	Mat _src = src.copy();	//make a shallow copy in case of the situation of src=dst
 
 	dst = Mat(dsize.x, dsize.y, src.datatype());

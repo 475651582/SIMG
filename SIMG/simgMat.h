@@ -1,3 +1,12 @@
+/*******************************************************************
+*	
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.05
+*	Brief: A simple Mat structure used for basic image processing
+*
+******************************************************************/
+
 #pragma once
 
 #include <assert.h>
@@ -93,7 +102,6 @@ namespace Simg
 
 			return *this;
 		}
-
 		Mat(const Mat& m)
 		{
 			if (this == &m)
@@ -110,25 +118,22 @@ namespace Simg
 
 			++*_pcount;
 		}
-
-		Mat	operator + (const Mat &m);
-
-		template <typename dtype>
-		Mat	operator + (const dtype m);
+		
+		
+		template <typename dtype> Mat operator + (const dtype m);
+		template <typename dtype> Mat operator - (const dtype m);
 
 		Mat	operator - (const Mat &m);
-
-		template <typename dtype>
-		Mat	operator - (const dtype m);
+		Mat	operator + (const Mat &m);
+		
 
 		Mat copy(); //get a deep copy of the Mat;
 
-		template <typename dtype>
-		void getMax(vector<dtype>& dst);
+		
+		template <typename dtype> void getMax(vector<dtype>& dst);
+		template <typename dtype> void getMin(vector<dtype>& dst);
 
-		template <typename dtype>
-		void getMin(vector<dtype>& dst);
-
+		//get the value of Mat(i,j,ch)
 		template<typename dtype> dtype& at(int i, int j, int ch = 0);
 
 		int rows() { return _rows; };
@@ -136,35 +141,35 @@ namespace Simg
 		int channels() { return _channels; };
 		int datatype() { return _dataType; };
 
-		template <typename dtype>
-		void setPixel(int col, int row, dtype data);
+		//<Deperecated> use at(i,j) instead
+		template <typename dtype> void setPixel(int col, int row, dtype data);
 
-		template <typename dtype>
-		void getPixel(int col, int row, vector<dtype>& dst);
+		//<Deperecated> use at(i,j) instead
+		template <typename dtype> void getPixel(int col, int row, vector<dtype>& dst);
 
-		template <typename dtype>
-		void setPixel(int col, int row, dtype ch1, dtype ch2, dtype ch3); //set pixel to assigned value(3 channel only)
-
-		template <typename dtype>
-		void setTo(dtype data);	//set whole image to assigned value (single channel only)
-
+		//<Deperecated> use at(i,j) instead
+		template <typename dtype> void setPixel(int col, int row, dtype ch1, dtype ch2, dtype ch3); //set pixel to assigned value(3 channel only)
 		
-	
-		Mat extendTo(int col, int row);	//extend the mat to a certain size to speed up algorithm in a certain circumstance
+		//set whole image to assigned value (single channel only)
+		template <typename dtype> void setTo(dtype data);	
+
+		//extend the mat to a certain size to speed up algorithm in a certain circumstance
+		Mat extendTo(int col, int row);
 		
 
 		~Mat();
 
-		uchar* dataPtr();
+		//get the pointer to Mat data
+		uchar* dataPtr();	
 
-		
+		//convert the Mat to a certain datatype
+		Mat convertTo(int convertType);
 
-		Mat convertTo(int datatype);
+		//return null if the mat data is empty
 		bool isEmpty() { return NULL == _dataPtr; };
 
 		friend class sWindow;
 		friend LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-
 		friend Mat imread(const char* path);
 		friend void split(Mat src, Mat* dst);
 
@@ -181,12 +186,10 @@ namespace Simg
 		int _dataLength; //data length of whole Mat
 		int _dataType;	//data type of Mat
 		int _originalFormat;	//the orginal format of the image, applicable if the image is loaded from a file.
-		int _channels;			//[reserved] channel number of the Mat. 
+		int _channels;			//channel number of the Mat. 
 		uchar *_dataPtr;	//original data pointer
-
 		size_t* _pcount; //copy ref counter
-
-		void refered();
+		void modified(); //if the data memory of the mat is modified, apply this to allocate new ptr and memory
 
 	};
 
@@ -195,7 +198,7 @@ namespace Simg
 	{
 		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && _channels == 1);
 
-		refered();
+		modified();
 		
 		switch (_dataType)
 		{
@@ -250,7 +253,7 @@ namespace Simg
 	{
 		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && _channels == 3);
 
-		refered();
+		modified();
 
 
 		switch (_dataType)
@@ -298,7 +301,7 @@ namespace Simg
 	{
 
 		assert(_dataPtr != NULL && _channels == 1);
-		refered();
+		modified();
 
 		for (int i = 0; i < _cols *_rows; i++)
 		{
@@ -699,7 +702,7 @@ namespace Simg
 	{
 		// TODO: 在此处插入 return 语句
 		assert(col >= 0 && col < _cols&&row >= 0 && row < _rows && _dataPtr != NULL && ch < _channels);
-		refered();
+		modified();
 		dtype* ptr = (dtype*)_dataPtr;
 		return ptr[(col + row * _cols) * _channels + ch];
 	}

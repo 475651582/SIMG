@@ -1,3 +1,12 @@
+/*******************************************************************
+*
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.05
+*	Brief: A simple Mat structure used for basic image processing
+*
+******************************************************************/
+
 #include "stdafx.h"
 #include "simgMat.h"
 #include "imgprocess.h"
@@ -182,10 +191,10 @@ uchar * Mat::dataPtr()
 	return _dataPtr;
 }
 
-Mat Simg::Mat::convertTo(int datatype)
+Mat Simg::Mat::convertTo(int convertType)
 {
 	Mat ret;
-	switch (datatype)
+	switch (convertType)
 	{
 	case SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD:
 		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD);
@@ -312,7 +321,7 @@ int Mat::init()
 	return 0;
 }
 
-void Simg::Mat::refered()
+void Simg::Mat::modified()
 {
 	if (*_pcount > 1)
 	{

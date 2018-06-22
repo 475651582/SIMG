@@ -1,3 +1,12 @@
+/*******************************************************************
+*
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.05
+*	Brief: window use for showing the images
+*
+******************************************************************/
+
 #pragma once
 #include <Windows.h>
 #include <vector>

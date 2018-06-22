@@ -1,8 +1,17 @@
+/*******************************************************************
+*
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.05
+*	Brief: contain some basic GUI and image loading interface
+*
+******************************************************************/
+
 #include "stdafx.h"
 #include "simg.h"
 
-using namespace Simg;
 
+using namespace Simg;
 std::vector<Simg::sWindow> windowsList;
 
 void   CALLBACK   TimerProc(HWND   hWnd, UINT   nMsg, UINT   nTimerid, DWORD   dwTime)
@@ -16,7 +25,6 @@ void   CALLBACK   TimerProc(HWND   hWnd, UINT   nMsg, UINT   nTimerid, DWORD   d
 		break;
 	}
 }
-
 Mat Simg::readBMP(const char *path)
 {
 	//bmp存储方式是以左下角第一个像素为坐标原点的，和通常的使用习惯不太一致，需在索引的时候注意。
@@ -96,7 +104,6 @@ Mat Simg::readBMP(const char *path)
 
 
 }
-
 Mat Simg::readJPG(const char * path)
 {
 	Mat ret;
@@ -123,7 +130,6 @@ Mat Simg::readJPG(const char * path)
 	
 	return ret;
 }
-
 void Simg::split(Mat src, Mat * dst)
 {
 	assert(src._channels > 1 && dst != NULL);
@@ -161,10 +167,7 @@ void Simg::split(Mat src, Mat * dst)
 		}
 	}
 	return;
-}
-
-
-Mat Simg::imread(const char* path)
+}Mat Simg::imread(const char* path)
 {
 	Mat ret;
 	string s_path;
@@ -197,8 +200,6 @@ Mat Simg::imread(const char* path)
 
 	return ret;
 }
-
-
 int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, int w, int h)
 {
 
@@ -220,9 +221,6 @@ int Simg::namedWindow(const char * windowName, int windowStyle, int x, int y, in
 	return 1;
 
 }
-
-
-
 int Simg::waitKey(int time)
 {
 	//update every window
@@ -264,7 +262,6 @@ int Simg::waitKey(int time)
 	}
 	return 0;
 }
-
 int Simg::imshow(const char * windowName, Mat img, int windowStyle)
 {
 	namedWindow(windowName, windowStyle, 0, 0, img.cols(), img.rows());

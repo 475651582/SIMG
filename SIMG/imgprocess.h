@@ -1,3 +1,13 @@
+/*******************************************************************
+*
+*	Author: Felix Shang
+*	Company: [personal]
+*	Date: 2018.06.07
+*	Brief: realized some basic image processing algorithm based on 
+*	Mat class
+*
+******************************************************************/
+
 #pragma once
 #include "simgMat.h"
 
@@ -90,6 +100,8 @@ namespace Simg
 	void erode(Mat &src, Mat &dst, Mat kernel);
 
 	void conv2(Mat &src, Mat &dst, Mat kernel);
+
+	//<deprecated>
 	void conv2f(Mat &src, Mat &dst, Mat kernel);
 
 	int threshold(Mat &src, Mat &dst, int threshold, int method = SIMG_METHOD_THRESHOLD_BINARY, int value = 255);
