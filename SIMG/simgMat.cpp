@@ -13,6 +13,49 @@
 
 
 using namespace Simg;
+
+template<typename dtype1, typename dtype2> void convertDataType(Mat &src, Mat &dst, int datatype)
+{
+	assert(!src.isEmpty());
+	const char* m = typeid(dtype1).name();
+	dst = Mat(src.cols(), src.rows(), datatype);
+
+	Mat _src = src.copy();
+	int srcCols = _src.cols();
+	int srcRows = _src.rows();
+	int srcChannels = _src.channels();
+	int dstChannels = dst.channels();
+	dtype1* srcBuffer = (dtype1*)_src.dataPtr();
+	dtype2* dstBuffer = (dtype2*)dst.dataPtr();
+
+	if (srcChannels == 1 && srcChannels < dstChannels)
+	{
+		for (int i = 0; i < srcCols * srcRows; i++)
+		{
+			for (int ch = 0; ch < dstChannels; ch++)
+			{
+				dstBuffer[i*dstChannels + ch] = (dtype2)srcBuffer[i];
+			}
+		}
+	}
+	else if (srcChannels == dstChannels)
+	{
+		for (int i = 0; i < srcCols * srcRows; i++)
+		{
+			for (int ch = 0; ch < dstChannels; ch++)
+			{
+				dstBuffer[i*dstChannels + ch] = (dtype2)srcBuffer[i*dstChannels + ch];
+			}
+		}
+	}
+	else
+	{
+		assert(false && "unsupported format conversion!");
+	}
+	
+}
+
+
 Mat::Mat()
 {
 	_cols = 0;
@@ -194,20 +237,87 @@ uchar * Mat::dataPtr()
 Mat Simg::Mat::convertTo(int convertType)
 {
 	Mat ret;
+
 	switch (convertType)
 	{
 	case SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD:
-		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD);
-		break;
+		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD); break;
 	case SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE:
-		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE);
-		break;
+		rgb2gray(*this, ret, SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE); break;
 	case SIMG_METHOD_CONVERT_RGB2LAB_STANDARD:
-		rgb2lab(*this, ret, SIMG_METHOD_CONVERT_RGB2LAB_STANDARD);
+		rgb2lab(*this, ret, SIMG_METHOD_CONVERT_RGB2LAB_STANDARD); break;
+	case SIMG_METHOD_CONVERT_1C8U:
+	{
+		switch (_dataType)
+		{
+		case SIMG_1C8U:
+			convertDataType<uchar, uchar>(*this, ret, SIMG_1C8U); break;
+		case SIMG_3C8U:
+			convertDataType<uchar, uchar>(*this, ret, SIMG_1C8U); break;
+		case SIMG_1C32F:
+			convertDataType<float, uchar>(*this, ret, SIMG_1C8U); break;
+		case SIMG_3C32F:
+			convertDataType<float, uchar>(*this, ret, SIMG_1C8U); break;
+		default:
+			break;
+		}
 		break;
+	}
+	case SIMG_METHOD_CONVERT_3C8U:
+	{
+		switch (_dataType)
+		{
+		case SIMG_1C8U:
+			convertDataType<uchar, uchar>(*this, ret, SIMG_3C8U); break;
+		case SIMG_3C8U:
+			convertDataType<uchar, uchar>(*this, ret, SIMG_3C8U); break;
+		case SIMG_1C32F:
+			convertDataType<float, uchar>(*this, ret, SIMG_3C8U); break;
+		case SIMG_3C32F:
+			convertDataType<float, uchar>(*this, ret, SIMG_3C8U); break;
+		default:
+			break;
+		}
+		break;
+	}
+	case SIMG_METHOD_CONVERT_1C32F:
+	{
+		switch (_dataType)
+		{
+		case SIMG_1C8U:
+			convertDataType<uchar, float>(*this, ret, SIMG_1C32F); break;
+		case SIMG_3C8U:
+			convertDataType<uchar, float>(*this, ret, SIMG_1C32F); break;
+		case SIMG_1C32F:
+			convertDataType<float, float>(*this, ret, SIMG_1C32F); break;
+		case SIMG_3C32F:
+			convertDataType<float, float>(*this, ret, SIMG_1C32F); break;
+		default:
+			break;
+		}
+		break;
+	}
+	case SIMG_METHOD_CONVERT_3C32F:
+	{
+		switch (_dataType)
+		{
+		case SIMG_1C8U:
+			convertDataType<uchar, float>(*this, ret, SIMG_3C32F); break;
+		case SIMG_3C8U:
+			convertDataType<uchar, float>(*this, ret, SIMG_3C32F); break;
+		case SIMG_1C32F:
+			convertDataType<float, float>(*this, ret, SIMG_3C32F); break;
+		case SIMG_3C32F:
+			convertDataType<float, float>(*this, ret, SIMG_3C32F); break;
+		default:
+			break;
+		}
+		break;
+	}
 	default:
 		break;
 	}
+
 	return ret;
 }
 
@@ -334,3 +444,5 @@ void Simg::Mat::modified()
 		_pcount = tmpPcount;
 	}
 }
+
+

@@ -969,3 +969,4 @@ void Simg::Sobel(Mat & src, Mat & dst, int method)
 		break;
 	}
 }
+
