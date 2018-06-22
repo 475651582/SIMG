@@ -132,6 +132,77 @@ dtype* getPaddingMemory(dtype* srcBuffer, int srcCols, int srcRows, int padX, in
 }
 
 
+void erodeOrdilate(Mat &src, Mat &dst, Mat kernel, bool erode = true)
+{
+	assert(!src.isEmpty() && !kernel.isEmpty() && SIMG_1C8U == src.datatype());
+	Mat _src = src.copy();
+
+	
+
+	if (1 == src.channels()) //consider single channel image first.
+	{
+		size_t directNum = 0;
+		int padX = kernel.cols();int padY = kernel.rows();
+		int srcCols = _src.cols();int srcRows = _src.rows();
+
+
+		int padSrcCols = srcCols + 2 * padX;
+		int padSrcRows = srcRows + 2 * padY;
+		int padDataLength = padSrcCols * padSrcRows;
+		int dataLength = srcCols * srcRows;
+
+		dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
+		int *directArray = new int[kernel.cols()*kernel.rows()];
+		char *convArray = new char[kernel.cols()*kernel.rows()];
+		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
+
+		uchar *srcBuffer = _src.dataPtr();
+		uchar *dstBuffer = dst.dataPtr();
+
+		//pad up memory to avoid boundary check to speed up
+		int ULpadPtrStarter = 0;
+		uchar* padSrcBuffer = getPaddingMemory(srcBuffer, srcCols, srcRows, padX, padY, ULpadPtrStarter);
+		uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
+
+		if (erode)
+		{
+			for (int i = 0; i < dataLength; i++)
+			{				
+				uchar min_neighbor = 255;
+				uchar neighbor = 0;
+				for (size_t j = 0; j < directNum; j++)
+				{
+					int index = i + directArray[j];
+					neighbor = ULpadPtr[index];					
+					min_neighbor = MIN(neighbor, min_neighbor);
+				}
+				dstBuffer[i] = min_neighbor;
+			}
+		}
+		else
+		{
+			for (int i = 0; i < dataLength; i++)
+			{
+				uchar max_neighbor = 0;
+				uchar neighbor = 0;
+				for (size_t j = 0; j < directNum; j++)
+				{
+					int index = i + directArray[j];
+					neighbor = ULpadPtr[index];
+					max_neighbor = MAX(neighbor, max_neighbor);
+				}
+				dstBuffer[i] = max_neighbor;
+			}
+		}
+		
+
+		delete directArray; directArray = NULL;
+		delete padSrcBuffer; padSrcBuffer = NULL;
+		delete convArray; convArray = NULL;
+	}
+}
+
+
 int findSmallestPow2(int x)
 {
 	int n = 0;
@@ -151,7 +222,7 @@ int findSmallestPow2(int x)
 void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 {
 	
-	assert(!src.isEmpty() && src.channels() == 3);
+	assert(!src.isEmpty() && SIMG_3C8U == src.datatype());
 
 	Mat _src = src.copy();
 	dst = Mat(_src.cols(), _src.rows(), SIMG_1C8U);
@@ -187,7 +258,7 @@ void Simg::rgb2gray(Mat &src, Mat &dst, int methods)
 
 void Simg::rgb2lab(Mat & src, Mat & dst, int methods)
 {
-	assert(!src.isEmpty() && src.channels() == 3);
+	assert(!src.isEmpty() && SIMG_3C8U == src.datatype());
 	Mat _src = src.copy();
 	dst = Mat(_src.cols(), _src.rows(), SIMG_3C8U);
 	uchar *srcBuffer = _src.dataPtr();
@@ -231,73 +302,14 @@ void Simg::rgb2lab_pixelStandard(uchar r, uchar g, uchar b, uchar & lab_l, uchar
 
 void Simg::dilate(Mat &src, Mat &dst, Mat kernel)
 {
-	assert(!src.isEmpty() && !kernel.isEmpty() && src.channels() == 1);
-	Mat _src = src.copy();
-
-	if (1 == src.channels()) //consider single channel image first.
-	{
-		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
-		int *directArray = new int[kernel.cols()*kernel.rows()];
-		uchar *srcBuffer = _src.dataPtr();
-		uchar *dstBuffer = dst.dataPtr();
-
-		int x = 0, y = 0;
-		size_t directNum = 0;
-		convertMorphyKernel(kernel, src, directArray, directNum);
-		for (int i = 0; i < src.cols()*src.rows(); i++)
-		{
-			
-			uchar max_neighbor = 0;
-			for (size_t j = 0; j < directNum; j++)
-			{
-				int index = i + directArray[j];
-				x = index % src.cols();
-				y = index / src.cols();
-				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
-				uchar neighbor = srcBuffer[index];
-				max_neighbor = MAX(neighbor, max_neighbor);
-			}
-			dstBuffer[i] = max_neighbor;
-		}
-
-		delete directArray; directArray = NULL;
-	}
+	erodeOrdilate(src, dst, kernel, false);
 }
 
 void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 {
-	assert(!src.isEmpty() && !kernel.isEmpty() && src.channels() == 1);
-	Mat _src = src.copy();
-
-	if (1 == src.channels()) //consider single channel image first.
-	{
-		dst = Mat(src.cols(), src.rows(), SIMG_1C8U);
-		int *directArray = new int[kernel.cols()*kernel.rows()];		
-		uchar *srcBuffer =_src.dataPtr();
-		uchar *dstBuffer = dst.dataPtr();
-
-		int x = 0, y = 0;
-		size_t directNum = 0;
-		convertMorphyKernel(kernel, src, directArray, directNum);
-		for (int i = 0; i < src.cols()*src.rows(); i++)
-		{
-
-			uchar min_neighbor = 255;
-			for (size_t j = 0; j < directNum; j++)
-			{
-				int index = i + directArray[j];
-				x = index % src.cols();
-				y = index / src.cols();
-				if (x < 0 || y < 0 || x > src.cols() - 1 || y > src.rows() - 1)  continue;  //no boundary first
-				uchar neighbor = srcBuffer[index];
-				min_neighbor = MIN(neighbor, min_neighbor);
-			}
-			dstBuffer[i] = min_neighbor;
-		}
-
-		delete directArray; directArray = NULL;
-	}
+	erodeOrdilate(src, dst, kernel, true);
 }
+
 
 
 
