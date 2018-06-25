@@ -339,17 +339,22 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 	int padSrcCols = srcCols + 2 * padX;
 	int padSrcRows = srcRows + 2 * padY;
 	int padDataLength = padSrcCols * padSrcRows;
-	int dataLength = srcCols * srcRows;
+	
+	int ULpadPtrStarter = 0;
+	Mat padSrc = _src.padMat(padX, padY, ULpadPtrStarter);
 
 	dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
 
-	uchar *srcBuffer = _src.dataPtr();
+	
 	uchar *dstBuffer = dst.dataPtr();
+	uchar *padSrcBuffer = padSrc.dataPtr();
+	uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
+
 	
 	//pad up memory to avoid boundary check to speed up
-	int ULpadPtrStarter = 0;
-	uchar* padSrcBuffer = getPaddingMemory(srcBuffer, srcCols, srcRows, padX, padY, ULpadPtrStarter);
-	uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
+	//
+	//uchar* padSrcBuffer = getPaddingMemory(srcBuffer, srcCols, srcRows, padX, padY, ULpadPtrStarter);
+	//uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
 
 	switch (kernel.datatype())
 	{
@@ -358,7 +363,7 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 		int *directArray = new int[kernel.cols()*kernel.rows()];
 		char *convArray = new char[kernel.cols()*kernel.rows()];	
 		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
-		for (int i = 0; i < dataLength; i++)
+		for (int i = 0; i < padDataLength; i++)
 		{
 			int sum = 0;
 			int index = 0;
@@ -373,7 +378,6 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 			dstBuffer[i] = MAX(MIN(sum, 255), 0);
 		}
 		delete directArray; directArray = NULL;
-		delete padSrcBuffer; padSrcBuffer = NULL;
 		delete convArray; convArray = NULL;
 		break;
 	}
@@ -388,7 +392,7 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 		{
 			convArrayFast[i] = (int)(convArray[i] * 1024);
 		}
-		for (int i = 0; i < dataLength; i++)
+		for (int i = 0; i < padDataLength; i++)
 		{
 			int sum = 0;
 			int index = 0;
@@ -405,7 +409,6 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 
 		}
 		delete directArray; directArray = NULL;
-		delete padSrcBuffer; padSrcBuffer = NULL;
 		delete convArray; convArray = NULL;
 		delete convArrayFast; convArrayFast = NULL;
 		break;

@@ -55,6 +55,27 @@ template<typename dtype1, typename dtype2> void convertDataType(Mat &src, Mat &d
 	
 }
 
+template<typename dtype> void padMemory(dtype* dstBuffer, dtype* srcBuffer, int srcCols, int srcRows, int padX, int padY, int &ULpadPtrStarter)
+{
+
+
+
+	int padSrcCols = srcCols + 2 * padX;
+	int padSrcRows = srcRows + 2 * padY;
+	int padDataLength = padSrcCols * padSrcRows;
+	int dataLength = srcCols * srcRows;
+
+
+	
+
+	for (int i = padY; i < padSrcRows - padY; i++)
+	{
+		int srcY = i - padY;
+		memcpy(dstBuffer + padX + i * padSrcCols, srcBuffer + srcY * srcCols, srcCols * sizeof(dtype));
+	}
+	ULpadPtrStarter = padX + padY * padSrcCols;
+
+}
 
 Mat::Mat()
 {
@@ -229,6 +250,46 @@ Mat Simg::Mat::ROI(int x, int y, int w, int h)
 	}
 	return ret;
 }
+
+Mat Simg::Mat::padMat(int padX, int padY, int & ULpadPtrStarter)
+{
+	assert(_channels == 1);
+	int padSrcCols = _cols + 2 * padX;
+	int padSrcRows = _rows + 2 * padY;
+	int padDataLength = padSrcCols * padSrcRows;
+	int dataLength = _cols * _rows;
+
+	Mat dst = Mat(padSrcCols, padSrcRows, _dataType);
+
+	switch (_dataType)
+	{
+	case SIMG_1C8U:
+	{
+		uchar *srcBuffer = (uchar*)_dataPtr; uchar *dstBuffer = (uchar*)dst._dataPtr;
+		padMemory<uchar>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		break;
+	}
+	case SIMG_1C8S:
+	{
+		char *srcBuffer = (char*)_dataPtr; char *dstBuffer = (char*)dst._dataPtr;
+		padMemory<char>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		break;
+	}
+	case SIMG_1C32F:
+	{
+		float *srcBuffer = (float*)_dataPtr; float *dstBuffer = (float*)dst._dataPtr;
+		padMemory<float>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		break;
+	}
+
+	default:
+		break;
+	}
+
+
+	return dst;
+}
+
 
 
 

@@ -129,6 +129,7 @@ namespace Simg
 
 		Mat copy(); //get a deep copy of the Mat;
 		Mat ROI(int x, int y, int w, int h);
+		Mat padMat(int padX, int padY, int& ULpadPtrStarter);	//pad a boundary memory around the original mat, UPpadPrtStarter is the ptr of the orginial data head
 		
 		template <typename dtype> void getMax(vector<dtype>& dst);
 		template <typename dtype> void getMin(vector<dtype>& dst);
