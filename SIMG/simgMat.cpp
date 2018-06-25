@@ -216,6 +216,20 @@ Mat Simg::Mat::copy()
 	return ret;
 }
 
+Mat Simg::Mat::ROI(int x, int y, int w, int h)
+{
+	assert(x >= 0 && x < _cols && y >= 0 && y < _rows);
+	assert(x + w < _cols && y + h < _rows);
+	Mat ret(w, h, _dataType);
+
+	int i0 = 0;
+	for (int i = y ; i < y + h; i++)
+	{
+		memcpy(ret._dataPtr + ((i0++) * w) * ret._cellLength * ret._channels, _dataPtr + (x + i * _cols) * _cellLength * _channels, w * _cellLength * _channels);
+	}
+	return ret;
+}
+
 
 
 uchar * Mat::dataPtr()

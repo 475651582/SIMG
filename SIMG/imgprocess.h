@@ -121,6 +121,7 @@ namespace Simg
 
 	void Gaussian(Mat &src, Mat &dst, int kernelSize, float sigma = 1.0f);
 	void Sobel(Mat &src, Mat &dst, int method = SIMG_METHOD_SOBEL_XY);
-	
+	void canny(Mat &src, Mat &dst, int highThreshVal, int lowThreshVal);
+	Mat mabs(Mat &m1);
 
 }

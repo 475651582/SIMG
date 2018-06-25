@@ -128,7 +128,7 @@ namespace Simg
 		
 
 		Mat copy(); //get a deep copy of the Mat;
-
+		Mat ROI(int x, int y, int w, int h);
 		
 		template <typename dtype> void getMax(vector<dtype>& dst);
 		template <typename dtype> void getMin(vector<dtype>& dst);

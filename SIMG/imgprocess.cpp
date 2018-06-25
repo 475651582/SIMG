@@ -16,6 +16,12 @@ inline float gamma(float x)
 {
 	return x>0.04045f ? pow((x + 0.055f) / 1.055f, 2.4f) : x / 12.92f;
 };
+
+template<typename dtype>
+inline dtype fastABS(dtype value)
+{
+	return (value ^ (value >> 31)) - (value >> 31);
+}
 void convertMorphyKernel(Mat Kernel, Mat src, int *directArray, size_t &directNum)
 {
 	assert(!Kernel.isEmpty() && Kernel.cols() % 2 != 0 && Kernel.rows() % 2 != 0);
@@ -107,6 +113,26 @@ dtype* getPaddingMemory(dtype* srcBuffer, int srcCols, int srcRows, int padX, in
 	ULpadPtrStarter = padX + padY * padSrcCols;
 
 	return padSrcBuffer;
+}
+
+template<typename dtype>
+Mat funcAbs(Mat &m1)
+{
+	Mat ret(m1.cols(), m1.rows(), m1.datatype());
+	Mat src = m1.copy();
+	dtype* srcBuffer = (dtype*)src.dataPtr();
+	dtype* retBuffer = (dtype*)ret.dataPtr();
+	int dataLength = src.cols() * src.rows();
+	int channel = ret.channels();
+	for (int i = 0; i < dataLength ; i++)
+	{
+		for (int ch = 0; ch < channel; ch++)
+		{
+			retBuffer[i*channel + ch] = abs(srcBuffer[i*channel + ch]);
+		}
+		
+	}
+	return ret;
 }
 
 
@@ -343,6 +369,7 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 				neighbor = ULpadPtr[index];	
 				sum += neighbor * convArray[j];
 			}
+			//dstBuffer[i] = (uchar)fastABS(sum);
 			dstBuffer[i] = MAX(MIN(sum, 255), 0);
 		}
 		delete directArray; directArray = NULL;
@@ -373,7 +400,8 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 				sum += neighbor * convArrayFast[j];
 			}
 			sum = sum >> 10;
-			dstBuffer[i] = (uchar)MAX(MIN(sum, 255), 0);
+			//dstBuffer[i] = (uchar)fastABS(sum);
+			dstBuffer[i] = MAX(MIN(sum, 255), 0);
 
 		}
 		delete directArray; directArray = NULL;
@@ -386,6 +414,7 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 	default:
 		break;
 	}
+	dst = dst.ROI(0, 0, srcCols, srcRows);
 }
 
 
@@ -968,5 +997,38 @@ void Simg::Sobel(Mat & src, Mat & dst, int method)
 	default:
 		break;
 	}
+}
+
+void Simg::canny(Mat & src, Mat & dst, int highThreshVal, int lowThreshVal)
+{
+	assert(!src.isEmpty() && src.datatype() == SIMG_1C8U);
+
+	Mat _src = src.copy();
+	Mat sx,sy;
+	Sobel(_src, sx, SIMG_METHOD_SOBEL_X);
+	Sobel(_src, sy, SIMG_METHOD_SOBEL_Y);
+}
+
+Mat Simg::mabs(Mat & m1)
+{
+	Mat ret;
+	switch (m1.datatype())
+	{
+	case SIMG_1C8U:
+		ret = funcAbs<uchar>(m1); break;
+	case SIMG_3C8U:
+		ret = funcAbs<uchar>(m1); break;
+	case SIMG_1C8S:
+		ret = funcAbs<char>(m1); break;
+	case SIMG_3C8S:
+		ret = funcAbs<char>(m1); break;
+	case SIMG_1C32F:
+		ret = funcAbs<float>(m1); break;
+	case SIMG_3C32F:
+		ret = funcAbs<float>(m1); break;
+	default:
+		break;
+	}
+	return ret;
 }
 
