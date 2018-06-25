@@ -26,20 +26,20 @@ namespace Simg
 {
 
 
-	const int SIMG_1C8U = 0x00010001;
-	const int SIMG_1C8S = 0x00010002;
-	const int SIMG_1C16U = 0x00010003;
-	const int SIMG_1C16S = 0x00010004;
-	const int SIMG_1C32F = 0x00010005;
-	const int SIMG_1C64F = 0x00010006;
-	const int SIMG_NULL = 0x00010000;
+	const int SIMG_1C8U = 0x00000001;
+	const int SIMG_1C8S = 0x00000002;
+	const int SIMG_1C16U = 0x00000003;
+	const int SIMG_1C16S = 0x00000004;
+	const int SIMG_1C32F = 0x00000005;
+	const int SIMG_1C64F = 0x00000006;
+	const int SIMG_NULL = 0x00000100;
 
-	const int SIMG_3C8U = 0x00010011;
-	const int SIMG_3C8S = 0x00010012;
-	const int SIMG_3C16U = 0x00010013;
-	const int SIMG_3C16S = 0x00010014;
-	const int SIMG_3C32F = 0x00010015;
-	const int SIMG_3C64F = 0x00010016;
+	const int SIMG_3C8U = 0x00000011;
+	const int SIMG_3C8S = 0x00000012;
+	const int SIMG_3C16U = 0x00000013;
+	const int SIMG_3C16S = 0x00000014;
+	const int SIMG_3C32F = 0x00000015;
+	const int SIMG_3C64F = 0x00000016;
 
 	const int SIMG_FORMAT_IMG_NONE = 0x00020000;
 	const int SIMG_FORMAT_IMG_BMP = 0x00020001;
@@ -129,7 +129,7 @@ namespace Simg
 
 		Mat copy(); //get a deep copy of the Mat;
 		Mat ROI(int x, int y, int w, int h);
-		Mat padMat(int padX, int padY, int& ULpadPtrStarter);	//pad a boundary memory around the original mat, UPpadPrtStarter is the ptr of the orginial data head
+		Mat padMat(int padX, int padY, int& ULpadPtrStarter, int& DLpadPtrEnder);	//pad a boundary memory around the original mat, UPpadPrtStarter is the ptr of the orginial data head
 		
 		template <typename dtype> void getMax(vector<dtype>& dst);
 		template <typename dtype> void getMin(vector<dtype>& dst);
@@ -561,7 +561,6 @@ namespace Simg
 				maxData = data > maxData ? data : maxData;
 			}
 			dst.push_back(maxData);
-			//return ret;
 			break;
 		}
 			

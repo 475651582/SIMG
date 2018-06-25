@@ -220,15 +220,18 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			win->_mat.getMin(matMin);
 			assert(matMax.size() > 0 && matMin.size() > 0);
 
-			short minValue = -UCHAR_MAX;
-			short maxValue = UCHAR_MAX;
+			short minValue = matMin[0];
+			short maxValue = matMax[0];
+			//short minValue = -4000;
+			//short maxValue = 4000;
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
 				int x = i % win->_mat._cols;
 				int y = i / win->_mat._cols;
 
 				short *ptr = (short*)win->_mat._dataPtr;
-				uchar grayData = (uchar)((ptr[i] - minValue) / (maxValue - minValue + 0.0f) * UCHAR_MAX);
+				short ptrData = MAX(MIN(ptr[i], maxValue), minValue);
+				uchar grayData = (uchar)((ptrData - minValue) / (maxValue - minValue + 0.0f) * UCHAR_MAX);
 				matBuffer[3 * x + y * lineByte] = grayData;
 				matBuffer[3 * x + y * lineByte + 1] = grayData;
 				matBuffer[3 * x + y * lineByte + 2] = grayData;

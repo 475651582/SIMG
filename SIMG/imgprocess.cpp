@@ -135,6 +135,64 @@ Mat funcAbs(Mat &m1)
 	return ret;
 }
 
+//需要特例化float的类型
+template<typename dstType>
+Mat funcConv(Mat src, Mat kernel, int datatype)
+{
+	size_t directNum = 0;
+
+	int padX = kernel.cols();
+	int padY = kernel.rows();
+
+	int srcCols = src.cols();
+	int srcRows = src.rows();
+	int srcDataLength = srcCols * srcRows;
+
+	int ULpadPtrStarter = 0;
+	int DRpadPtrEnder = 0;
+	Mat padSrc = src.padMat(padX, padY, ULpadPtrStarter, DRpadPtrEnder);
+	int padSrcCols = padSrc.cols();
+	int padSrcRows = padSrc.rows();
+	int padDataLength = padSrc.cols() * padSrc.rows();
+	Mat dst = Mat(padSrcCols, padSrcRows, datatype);
+
+	dstType *dstBuffer = (dstType *)dst.dataPtr();
+	dstType *padSrcBuffer =(dstType *) padSrc.dataPtr();
+	dstType *ULpadPtr =(dstType *) padSrcBuffer + ULpadPtrStarter;
+
+	int *directArray = new int[kernel.cols()*kernel.rows()];
+	float *convArray = new float[kernel.cols()*kernel.rows()];
+	int *convArrayFast = new int[kernel.cols()*kernel.rows()];
+	convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
+	for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
+	{
+		convArrayFast[i] = (int)(convArray[i] * 1024);
+	}
+	for (int i = 0; i < DRpadPtrEnder; i++)
+	{
+		int sum = 0;
+		int index = 0;
+		int neighbor = 0;
+		for (size_t j = 0; j < directNum; j++)
+		{
+			index = i + directArray[j];
+			neighbor =(int) ULpadPtr[index];
+			sum += neighbor * convArrayFast[j];
+		}
+		sum = sum >> 10;
+		dstBuffer[i] = (dstType)sum;
+
+	}
+
+	dst = dst.ROI(0, 0, srcCols, srcRows);
+
+	delete directArray; directArray = NULL;
+	delete convArray; convArray = NULL;
+	delete convArrayFast; convArrayFast = NULL;
+
+	return dst;
+}
+
 
 void erodeOrdilate(Mat &src, Mat &dst, Mat kernel, bool erode = true)
 {
@@ -317,66 +375,37 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 
 
 
-void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
+void Simg::conv2(Mat & src, Mat & dst, Mat kernel, int datatype)
 {	
 	assert(!src.isEmpty() && src.channels() == 1);
-	assert(src.datatype() == SIMG_1C8U);
+	assert(src.datatype() == SIMG_1C8U || src.datatype() == SIMG_1C16S || src.datatype() == SIMG_1C32F);
 	assert(kernel.datatype() == SIMG_1C32F);
+	assert(datatype == SIMG_1C8U || datatype == SIMG_1C16S || datatype == SIMG_1C32F);
 
-
-	Mat _src = src.copy();
-
-	int x = 0, y = 0;
-	size_t directNum = 0;
-
-	int padX = kernel.cols();
-	int padY = kernel.rows();
-
-	int srcCols = _src.cols();
-	int srcRows = _src.rows();	
 	
 	
-	int ULpadPtrStarter = 0;
-	Mat padSrc = _src.padMat(padX, padY, ULpadPtrStarter);
-	int padSrcCols = padSrc.cols();
-	int padSrcRows = padSrc.rows();
-	int padDataLength = padSrc.cols() * padSrc.rows();
-	dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
-		
-	uchar *dstBuffer = dst.dataPtr();
-	uchar *padSrcBuffer = padSrc.dataPtr();
-	uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
 	
-	int *directArray = new int[kernel.cols()*kernel.rows()];
-	float *convArray = new float[kernel.cols()*kernel.rows()];
-	int *convArrayFast = new int[kernel.cols()*kernel.rows()];
-	convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
-	for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
+	Mat _src = src.convertTo(datatype);
+
+	Mat ret;
+
+	switch (datatype)
 	{
-		convArrayFast[i] = (int)(convArray[i] * 1024);
-	}
-	for (int i = 0; i < padDataLength; i++)
-	{
-		int sum = 0;
-		int index = 0;
-		int neighbor = 0;
-		for (size_t j = 0; j < directNum; j++)
-		{
-			index = i + directArray[j];
-			neighbor = ULpadPtr[index];
-			sum += neighbor * convArrayFast[j];
-		}
-		sum = sum >> 10;
-		dstBuffer[i] = MAX(MIN(sum, 255), 0);
-
+	case SIMG_1C8U:
+		ret = funcConv<uchar>(_src, kernel, datatype);
+		break;
+	case SIMG_1C16S:
+		ret = funcConv<short>(_src, kernel, datatype);
+		break;
+	case SIMG_1C32F:
+		ret = funcConv<float>(_src, kernel, datatype);
+		break;
+	default:
+		break;
 	}
 	
-	dst = dst.ROI(0, 0, srcCols, srcRows);
-
-	delete directArray; directArray = NULL;
-	delete convArray; convArray = NULL;
-	delete convArrayFast; convArrayFast = NULL;
-
+	
+	dst = ret.copy();
 }
 
 
@@ -920,7 +949,7 @@ void Simg::Gaussian(Mat & src, Mat & dst, int kernelSize, float sigma)
 		}
 	}
 
-	conv2(_src, dst, kernel);
+	conv2(_src, dst, kernel,SIMG_1C8U);
 }
 
 void Simg::Sobel(Mat & src, Mat & dst, int method)
@@ -929,30 +958,32 @@ void Simg::Sobel(Mat & src, Mat & dst, int method)
 	assert(src.datatype() == SIMG_1C8U);
 
 	Mat _src = src.copy();
-	Mat kernelX(3, 3, SIMG_1C32F);
 	Mat kernelY(3, 3, SIMG_1C32F);
+	Mat kernelX(3, 3, SIMG_1C32F);
 
-	kernelX.setPixel(0, 0, -3); kernelX.setPixel(1, 0, 0); kernelX.setPixel(2, 0, 3);
-	kernelX.setPixel(0, 1, -10); kernelX.setPixel(1, 1, 0); kernelX.setPixel(2, 1, 10);
-	kernelX.setPixel(0, 2, -3); kernelX.setPixel(1, 2, 0); kernelX.setPixel(2, 2, 3);
+	kernelY.setPixel(0, 0, -3); kernelY.setPixel(1, 0, 0); kernelY.setPixel(2, 0, 3);
+	kernelY.setPixel(0, 1, -10); kernelY.setPixel(1, 1, 0); kernelY.setPixel(2, 1, 10);
+	kernelY.setPixel(0, 2, -3); kernelY.setPixel(1, 2, 0); kernelY.setPixel(2, 2, 3);
 
-	kernelY.setPixel(0, 0, -3); kernelY.setPixel(1, 0, -10); kernelY.setPixel(2, 0, -3);
-	kernelY.setPixel(0, 1, 0); kernelY.setPixel(1, 1, 0); kernelY.setPixel(2, 1, 0);
-	kernelY.setPixel(0, 2, 3); kernelY.setPixel(1, 2, 10); kernelY.setPixel(2, 2, 3);
+	kernelX.setPixel(0, 0, -3); kernelX.setPixel(1, 0, -10); kernelX.setPixel(2, 0, -3);
+	kernelX.setPixel(0, 1, 0); kernelX.setPixel(1, 1, 0); kernelX.setPixel(2, 1, 0);
+	kernelX.setPixel(0, 2, 3); kernelX.setPixel(1, 2, 10); kernelX.setPixel(2, 2, 3);
 	switch (method)
 	{
 	case SIMG_METHOD_SOBEL_X:
-		conv2(_src, dst, kernelX);
+		conv2(_src, dst, kernelX,SIMG_1C16S);
+		dst = mabs(dst);
 		break;
 	case SIMG_METHOD_SOBEL_Y:
-		conv2(_src, dst, kernelY);
+		conv2(_src, dst, kernelY, SIMG_1C16S);
+		dst = mabs(dst);
 		break;
 	case SIMG_METHOD_SOBEL_XY:
 	{
 		Mat tmp1,tmp2;
-		conv2(_src, tmp1, kernelX);
-		conv2(_src, tmp2, kernelY);
-		dst = tmp1 + tmp2;
+		conv2(_src, tmp1, kernelX, SIMG_1C16S);
+		conv2(_src, tmp2, kernelY, SIMG_1C16S);
+		dst = mabs(tmp1) + mabs(tmp2);
 		break;
 	}
 		
@@ -984,6 +1015,8 @@ Mat Simg::mabs(Mat & m1)
 		ret = funcAbs<char>(m1); break;
 	case SIMG_3C8S:
 		ret = funcAbs<char>(m1); break;
+	case SIMG_1C16S:
+		ret = funcAbs<short>(m1); break;
 	case SIMG_1C32F:
 		ret = funcAbs<float>(m1); break;
 	case SIMG_3C32F:

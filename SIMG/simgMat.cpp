@@ -17,7 +17,7 @@ using namespace Simg;
 template<typename dtype1, typename dtype2> void convertDataType(Mat &src, Mat &dst, int datatype)
 {
 	assert(!src.isEmpty());
-	const char* m = typeid(dtype1).name();
+
 	dst = Mat(src.cols(), src.rows(), datatype);
 
 	Mat _src = src.copy();
@@ -55,7 +55,7 @@ template<typename dtype1, typename dtype2> void convertDataType(Mat &src, Mat &d
 	
 }
 
-template<typename dtype> void padMemory(dtype* dstBuffer, dtype* srcBuffer, int srcCols, int srcRows, int padX, int padY, int &ULpadPtrStarter)
+template<typename dtype> void padMemory(dtype* dstBuffer, dtype* srcBuffer, int srcCols, int srcRows, int padX, int padY, int &ULpadPtrStarter, int &DLpadPtrEnder)
 {
 
 
@@ -65,15 +65,13 @@ template<typename dtype> void padMemory(dtype* dstBuffer, dtype* srcBuffer, int 
 	int padDataLength = padSrcCols * padSrcRows;
 	int dataLength = srcCols * srcRows;
 
-
-	
-
 	for (int i = padY; i < padSrcRows - padY; i++)
 	{
 		int srcY = i - padY;
 		memcpy(dstBuffer + padX + i * padSrcCols, srcBuffer + srcY * srcCols, srcCols * sizeof(dtype));
 	}
 	ULpadPtrStarter = padX + padY * padSrcCols;
+	DLpadPtrEnder = padDataLength - padY * padSrcCols - padX - ULpadPtrStarter;
 
 }
 
@@ -273,7 +271,7 @@ Mat Simg::Mat::ROI(int x, int y, int w, int h)
 	return ret;
 }
 
-Mat Simg::Mat::padMat(int padX, int padY, int & ULpadPtrStarter)
+Mat Simg::Mat::padMat(int padX, int padY, int & ULpadPtrStarter, int& DLpadPtrEnder)
 {
 	assert(_channels == 1);
 	int padSrcCols = _cols + 2 * padX;
@@ -288,25 +286,25 @@ Mat Simg::Mat::padMat(int padX, int padY, int & ULpadPtrStarter)
 	case SIMG_1C8U:
 	{
 		uchar *srcBuffer = (uchar*)_dataPtr; uchar *dstBuffer = (uchar*)dst._dataPtr;
-		padMemory<uchar>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		padMemory<uchar>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter, DLpadPtrEnder);
 		break;
 	}
 	case SIMG_1C8S:
 	{
 		char *srcBuffer = (char*)_dataPtr; char *dstBuffer = (char*)dst._dataPtr;
-		padMemory<char>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		padMemory<char>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter, DLpadPtrEnder);
 		break;
 	}
 	case SIMG_1C16S:
 	{
 		short *srcBuffer = (short*)_dataPtr; short *dstBuffer = (short*)dst._dataPtr;
-		padMemory<short>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		padMemory<short>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter, DLpadPtrEnder);
 		break;
 	}
 	case SIMG_1C32F:
 	{
 		float *srcBuffer = (float*)_dataPtr; float *dstBuffer = (float*)dst._dataPtr;
-		padMemory<float>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		padMemory<float>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter, DLpadPtrEnder);
 		break;
 	}
 
@@ -364,6 +362,7 @@ Mat Simg::Mat::convertTo(int convertType)
 		case SIMG_3C32F:
 			convertDataType<float, uchar>(*this, ret, SIMG_1C8U); break;
 		default:
+			assert(0 && "unsupported datatype conversion");
 			break;
 		}
 		break;
@@ -381,6 +380,7 @@ Mat Simg::Mat::convertTo(int convertType)
 		case SIMG_3C32F:
 			convertDataType<float, uchar>(*this, ret, SIMG_3C8U); break;
 		default:
+			assert(0 && "unsupported datatype conversion");
 			break;
 		}
 		break;
@@ -391,6 +391,8 @@ Mat Simg::Mat::convertTo(int convertType)
 		{
 		case SIMG_1C8U:
 			convertDataType<uchar, float>(*this, ret, SIMG_1C32F); break;
+		case SIMG_1C8S:
+			convertDataType<char, float>(*this, ret, SIMG_1C32F); break;
 		case SIMG_1C16S:
 			convertDataType<short, float>(*this, ret, SIMG_1C32F); break;
 		case SIMG_3C8U:
@@ -400,6 +402,7 @@ Mat Simg::Mat::convertTo(int convertType)
 		case SIMG_3C32F:
 			convertDataType<float, float>(*this, ret, SIMG_1C32F); break;
 		default:
+			assert(0 && "unsupported datatype conversion");
 			break;
 		}
 		break;
@@ -417,6 +420,7 @@ Mat Simg::Mat::convertTo(int convertType)
 		case SIMG_3C32F:
 			convertDataType<float, float>(*this, ret, SIMG_3C32F); break;
 		default:
+			assert(0 && "unsupported datatype conversion");
 			break;
 		}
 		break;
@@ -436,11 +440,13 @@ Mat Simg::Mat::convertTo(int convertType)
 		case SIMG_3C32F:
 			convertDataType<float, short>(*this, ret, SIMG_1C16S); break;
 		default:
+			assert(0 && "unsupported datatype conversion");
 			break;
 		}
 		break;
 	}
 	default:
+		assert(0 && "unsupported datatype conversion");
 		break;
 	}
 

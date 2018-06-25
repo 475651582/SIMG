@@ -73,14 +73,14 @@ namespace Simg
 		int *_dataPtr;
 	};
 
-	const int SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD = 0x00000001;
-	const int SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE = 0x00000002;
-	const int SIMG_METHOD_CONVERT_RGB2LAB_STANDARD = 0x00000011;
-	const int SIMG_METHOD_CONVERT_1C8U = 0x00000100;
-	const int SIMG_METHOD_CONVERT_3C8U = 0x00000101;
-	const int SIMG_METHOD_CONVERT_1C32F = 0x00000102;
-	const int SIMG_METHOD_CONVERT_3C32F = 0x00000103;
-	const int SIMG_METHOD_CONVERT_1C16S = 0x00000104;
+	const int SIMG_METHOD_CONVERT_RGB2GRAY_STANDARD = 0x00000111;
+	const int SIMG_METHOD_CONVERT_RGB2GRAY_AVERAGE = 0x00000112;
+	const int SIMG_METHOD_CONVERT_RGB2LAB_STANDARD = 0x00000113;
+	const int SIMG_METHOD_CONVERT_1C8U = SIMG_1C8U;
+	const int SIMG_METHOD_CONVERT_3C8U = SIMG_3C8U;
+	const int SIMG_METHOD_CONVERT_1C32F = SIMG_1C32F;
+	const int SIMG_METHOD_CONVERT_3C32F = SIMG_3C32F;
+	const int SIMG_METHOD_CONVERT_1C16S = SIMG_1C16S;
 
 	const int SIMG_MORPH_RECTANGLE = 0x00010001;
 	const int SIMG_MORPH_DIAMOND = 0x00010002;
@@ -105,7 +105,7 @@ namespace Simg
 	void dilate(Mat &src, Mat &dst, Mat kernel);
 	void erode(Mat &src, Mat &dst, Mat kernel);
 
-	void conv2(Mat &src, Mat &dst, Mat kernel);
+	void conv2(Mat &src, Mat &dst, Mat kernel,int datatype);
 
 	//<deprecated>
 	void conv2f(Mat &src, Mat &dst, Mat kernel);
