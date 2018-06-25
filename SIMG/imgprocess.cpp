@@ -318,10 +318,10 @@ void Simg::erode(Mat & src, Mat & dst, Mat kernel)
 
 
 void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
-{
+{	
 	assert(!src.isEmpty() && src.channels() == 1);
 	assert(src.datatype() == SIMG_1C8U);
-	assert(kernel.datatype() == SIMG_1C8S || kernel.datatype() == SIMG_1C32F);
+	assert(kernel.datatype() == SIMG_1C32F);
 
 
 	Mat _src = src.copy();
@@ -333,91 +333,50 @@ void Simg::conv2(Mat & src, Mat & dst, Mat kernel)
 	int padY = kernel.rows();
 
 	int srcCols = _src.cols();
-	int srcRows = _src.rows();
-
-
-	int padSrcCols = srcCols + 2 * padX;
-	int padSrcRows = srcRows + 2 * padY;
-	int padDataLength = padSrcCols * padSrcRows;
+	int srcRows = _src.rows();	
+	
 	
 	int ULpadPtrStarter = 0;
 	Mat padSrc = _src.padMat(padX, padY, ULpadPtrStarter);
-
+	int padSrcCols = padSrc.cols();
+	int padSrcRows = padSrc.rows();
+	int padDataLength = padSrc.cols() * padSrc.rows();
 	dst = Mat(padSrcCols, padSrcRows, SIMG_1C8U);
-
-	
+		
 	uchar *dstBuffer = dst.dataPtr();
 	uchar *padSrcBuffer = padSrc.dataPtr();
 	uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
-
 	
-	//pad up memory to avoid boundary check to speed up
-	//
-	//uchar* padSrcBuffer = getPaddingMemory(srcBuffer, srcCols, srcRows, padX, padY, ULpadPtrStarter);
-	//uchar *ULpadPtr = padSrcBuffer + ULpadPtrStarter;
-
-	switch (kernel.datatype())
+	int *directArray = new int[kernel.cols()*kernel.rows()];
+	float *convArray = new float[kernel.cols()*kernel.rows()];
+	int *convArrayFast = new int[kernel.cols()*kernel.rows()];
+	convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
+	for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
 	{
-	case SIMG_1C8S:
-	{
-		int *directArray = new int[kernel.cols()*kernel.rows()];
-		char *convArray = new char[kernel.cols()*kernel.rows()];	
-		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
-		for (int i = 0; i < padDataLength; i++)
-		{
-			int sum = 0;
-			int index = 0;
-			int neighbor = 0;
-			for (size_t j = 0; j < directNum; j++)
-			{
-				index = i + directArray[j];
-				neighbor = ULpadPtr[index];	
-				sum += neighbor * convArray[j];
-			}
-			//dstBuffer[i] = (uchar)fastABS(sum);
-			dstBuffer[i] = MAX(MIN(sum, 255), 0);
-		}
-		delete directArray; directArray = NULL;
-		delete convArray; convArray = NULL;
-		break;
+		convArrayFast[i] = (int)(convArray[i] * 1024);
 	}
-		
-	case SIMG_1C32F:
+	for (int i = 0; i < padDataLength; i++)
 	{
-		int *directArray = new int[kernel.cols()*kernel.rows()];
-		float *convArray = new float[kernel.cols()*kernel.rows()];
-		int *convArrayFast = new int[kernel.cols()*kernel.rows()];
-		convertConvKernel2(kernel, padSrcCols, directArray, convArray, directNum);
-		for (int i = 0; i < kernel.cols()*kernel.rows(); i++)
+		int sum = 0;
+		int index = 0;
+		int neighbor = 0;
+		for (size_t j = 0; j < directNum; j++)
 		{
-			convArrayFast[i] = (int)(convArray[i] * 1024);
+			index = i + directArray[j];
+			neighbor = ULpadPtr[index];
+			sum += neighbor * convArrayFast[j];
 		}
-		for (int i = 0; i < padDataLength; i++)
-		{
-			int sum = 0;
-			int index = 0;
-			int neighbor = 0;
-			for (size_t j = 0; j < directNum; j++)
-			{
-				index = i + directArray[j];
-				neighbor = ULpadPtr[index];
-				sum += neighbor * convArrayFast[j];
-			}
-			sum = sum >> 10;
-			//dstBuffer[i] = (uchar)fastABS(sum);
-			dstBuffer[i] = MAX(MIN(sum, 255), 0);
+		sum = sum >> 10;
+		dstBuffer[i] = MAX(MIN(sum, 255), 0);
 
-		}
-		delete directArray; directArray = NULL;
-		delete convArray; convArray = NULL;
-		delete convArrayFast; convArrayFast = NULL;
-		break;
-	}		
-
-	default:
-		break;
 	}
+	
 	dst = dst.ROI(0, 0, srcCols, srcRows);
+
+	delete directArray; directArray = NULL;
+	delete convArray; convArray = NULL;
+	delete convArrayFast; convArrayFast = NULL;
+
 }
 
 
@@ -970,8 +929,8 @@ void Simg::Sobel(Mat & src, Mat & dst, int method)
 	assert(src.datatype() == SIMG_1C8U);
 
 	Mat _src = src.copy();
-	Mat kernelX(3, 3, SIMG_1C8S);
-	Mat kernelY(3, 3, SIMG_1C8S);
+	Mat kernelX(3, 3, SIMG_1C32F);
+	Mat kernelY(3, 3, SIMG_1C32F);
 
 	kernelX.setPixel(0, 0, -3); kernelX.setPixel(1, 0, 0); kernelX.setPixel(2, 0, 3);
 	kernelX.setPixel(0, 1, -10); kernelX.setPixel(1, 1, 0); kernelX.setPixel(2, 1, 10);

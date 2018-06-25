@@ -370,6 +370,16 @@ namespace Simg
 			}
 			break;
 		}
+		case SIMG_1C16S:
+		{
+			short* ptr = (short*)_dataPtr;
+			short* ret_ptr = (short*)ret._dataPtr;
+			for (int i = 0; i < _cols*_rows; i++)
+			{
+				ret_ptr[i] = MAX(MIN(ptr[i] + (char)data, SHRT_MAX), 0);
+			}
+			break;
+		}
 		case SIMG_1C32F:
 		{
 			float* ptr = (float*)_dataPtr;
@@ -421,6 +431,16 @@ namespace Simg
 			for (int i = 0; i < _cols*_rows; i++)
 			{
 				ret_ptr[i] = MAX(MIN(ptr[i] - (char)data, CHAR_MAX), 0);
+			}
+			break;
+		}
+		case SIMG_1C8S:
+		{
+			short* ptr = (short*)_dataPtr;
+			short* ret_ptr = (short*)ret._dataPtr;
+			for (int i = 0; i < _cols*_rows; i++)
+			{
+				ret_ptr[i] = MAX(MIN(ptr[i] - (short)data, SHRT_MAX), 0);
 			}
 			break;
 		}
@@ -567,7 +587,19 @@ namespace Simg
 			//return ret;
 			break;
 		}
-			
+
+		case SIMG_1C16S:
+		{
+			short * ptr = (short*)_dataPtr;
+			short maxData = SHRT_MIN;
+			for (int i = 0; i < _cols*_rows; i++)
+			{
+				short data = ptr[i];
+				maxData = data > maxData ? data : maxData;
+			}
+			dst.push_back(maxData);
+			break;
+		}
 		default:
 			break;
 		}
@@ -691,6 +723,20 @@ namespace Simg
 			//return ret;
 			break;
 		}
+		case SIMG_1C16S:
+		{
+			//vector<float> ret;
+			short * ptr = (short*)_dataPtr;
+			short minData = SHRT_MAX;
+			for (int i = 0; i < _cols*_rows; i++)
+			{
+				short data = ptr[i];
+				minData = data < minData ? data : minData;
+			}
+			dst.push_back(minData);
+			break;
+		}
+
 
 		default:
 			break;

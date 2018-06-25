@@ -139,6 +139,17 @@ Mat Mat::operator+(const Mat & m)
 		}
 		break;
 	}
+	case SIMG_1C16S:
+	{
+		short* ptr_ret = (short*)ret._dataPtr;
+		short* ptr = (short*)_dataPtr;
+		short* ptr_m = (short*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = MAX(MIN(ptr[i] + ptr_m[i], SHRT_MAX), SHRT_MIN);
+		}
+		break;
+	}
 	case SIMG_1C32F:
 	{
 		float* ptr_ret = (float*)ret._dataPtr;
@@ -197,6 +208,17 @@ Mat Mat::operator-(const Mat & m)
 		for (int i = 0; i < _cols*_rows; i++)
 		{
 			ptr_ret[i] = MAX(MIN(ptr[i] - ptr_m[i], CHAR_MAX), CHAR_MIN);
+		}
+		break;
+	}
+	case SIMG_1C16S:
+	{
+		short* ptr_ret = (short*)ret._dataPtr;
+		short* ptr = (short*)_dataPtr;
+		short* ptr_m = (short*)m._dataPtr;
+		for (int i = 0; i < _cols*_rows; i++)
+		{
+			ptr_ret[i] = MAX(MIN(ptr[i] - ptr_m[i], SHRT_MAX), SHRT_MIN);
 		}
 		break;
 	}
@@ -275,6 +297,12 @@ Mat Simg::Mat::padMat(int padX, int padY, int & ULpadPtrStarter)
 		padMemory<char>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
 		break;
 	}
+	case SIMG_1C16S:
+	{
+		short *srcBuffer = (short*)_dataPtr; short *dstBuffer = (short*)dst._dataPtr;
+		padMemory<short>(dstBuffer, srcBuffer, _cols, _rows, padX, padY, ULpadPtrStarter);
+		break;
+	}
 	case SIMG_1C32F:
 	{
 		float *srcBuffer = (float*)_dataPtr; float *dstBuffer = (float*)dst._dataPtr;
@@ -327,6 +355,8 @@ Mat Simg::Mat::convertTo(int convertType)
 		{
 		case SIMG_1C8U:
 			convertDataType<uchar, uchar>(*this, ret, SIMG_1C8U); break;
+		case SIMG_1C16S:
+			convertDataType<short, uchar>(*this, ret, SIMG_1C8U); break;
 		case SIMG_3C8U:
 			convertDataType<uchar, uchar>(*this, ret, SIMG_1C8U); break;
 		case SIMG_1C32F:
@@ -361,6 +391,8 @@ Mat Simg::Mat::convertTo(int convertType)
 		{
 		case SIMG_1C8U:
 			convertDataType<uchar, float>(*this, ret, SIMG_1C32F); break;
+		case SIMG_1C16S:
+			convertDataType<short, float>(*this, ret, SIMG_1C32F); break;
 		case SIMG_3C8U:
 			convertDataType<uchar, float>(*this, ret, SIMG_1C32F); break;
 		case SIMG_1C32F:
@@ -384,6 +416,25 @@ Mat Simg::Mat::convertTo(int convertType)
 			convertDataType<float, float>(*this, ret, SIMG_3C32F); break;
 		case SIMG_3C32F:
 			convertDataType<float, float>(*this, ret, SIMG_3C32F); break;
+		default:
+			break;
+		}
+		break;
+	}
+	case SIMG_METHOD_CONVERT_1C16S:
+	{
+		switch (_dataType)
+		{
+		case SIMG_1C8U:
+			convertDataType<uchar, short>(*this, ret, SIMG_1C16S); break;
+		case SIMG_1C8S:
+			convertDataType<char, short>(*this, ret, SIMG_1C16S); break;
+		case SIMG_3C8U:
+			convertDataType<uchar, short>(*this, ret, SIMG_1C16S); break;
+		case SIMG_1C32F:
+			convertDataType<float, short>(*this, ret, SIMG_1C16S); break;
+		case SIMG_3C32F:
+			convertDataType<float, short>(*this, ret, SIMG_1C16S); break;
 		default:
 			break;
 		}

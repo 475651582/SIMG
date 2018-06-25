@@ -206,6 +206,35 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 			}
 			break;
 		}
+		case SIMG_1C16S:
+		{
+			bmpInfo.bmiHeader.biCompression = BI_RGB;
+			bmpInfo.bmiHeader.biBitCount = 24;
+			hdcmem = CreateCompatibleDC(hdc);
+			int lineByte = (bmpInfo.bmiHeader.biWidth * bmpInfo.bmiHeader.biBitCount / 8 + 3) / 4 * 4;
+
+			DIBTotalBytes = win->_mat._rows * lineByte;
+			matBuffer = new  uchar[DIBTotalBytes];
+			vector<short> matMax, matMin;
+			win->_mat.getMax(matMax);
+			win->_mat.getMin(matMin);
+			assert(matMax.size() > 0 && matMin.size() > 0);
+
+			short minValue = -UCHAR_MAX;
+			short maxValue = UCHAR_MAX;
+			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
+			{
+				int x = i % win->_mat._cols;
+				int y = i / win->_mat._cols;
+
+				short *ptr = (short*)win->_mat._dataPtr;
+				uchar grayData = (uchar)((ptr[i] - minValue) / (maxValue - minValue + 0.0f) * UCHAR_MAX);
+				matBuffer[3 * x + y * lineByte] = grayData;
+				matBuffer[3 * x + y * lineByte + 1] = grayData;
+				matBuffer[3 * x + y * lineByte + 2] = grayData;
+			}
+			break;
+		}
 		case SIMG_1C32F:
 		{
 			bmpInfo.bmiHeader.biCompression = BI_RGB;
