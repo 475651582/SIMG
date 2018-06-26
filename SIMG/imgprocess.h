@@ -14,7 +14,7 @@
 
 namespace Simg
 {
-	
+#define FAST_ABS(X) (((X) ^ ((X) >> 31)) - ((X) >> 31))
 	class Histogram
 	{
 	public:

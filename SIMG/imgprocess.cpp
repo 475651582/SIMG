@@ -115,6 +115,40 @@ dtype* getPaddingMemory(dtype* srcBuffer, int srcCols, int srcRows, int padX, in
 	return padSrcBuffer;
 }
 
+inline short getGradDirect(int x, int y)
+{
+	if (x == 0)
+	{
+		return 0;
+	}
+	if (y == 0)
+	{
+		return 2;
+	}
+
+	int divXY = ((x << 10) / y);
+	int divYX = ((y << 10) / x);
+	int tan67_5 = 2472;
+	if (divXY > tan67_5 || divXY < - tan67_5)
+	{
+		return 0;
+	}
+	else if (divYX > tan67_5 || divYX < - tan67_5)
+	{
+		return 2;
+	}
+	else if (x * y > 0)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+	
+
+}
+
 short getGradDirectAccu(int x, int y)
 {
 	int angle = (short)(atan2(y, x) * 180 / SIMG_PI);
@@ -167,7 +201,7 @@ void getGradDirectIndex(Mat _sx, Mat _sy, Mat &dstN0)
 	{
 		short x = xDataPtr[i];
 		short y = yDataPtr[i];
-		int direct = getGradDirectAccu(x, y);
+		int direct = getGradDirect(x, y);
 		//printf("%d,%d,%d\n", x, y, direct);
 		short indexN0 = directArrayN0[direct];
 		N0DataPtr[i] = indexN0;
@@ -233,6 +267,9 @@ Mat funcAbs(Mat &m1)
 	}
 	return ret;
 }
+
+
+
 
 
 template<typename dtype>
@@ -1171,7 +1208,7 @@ void Simg::Sobel(Mat & src, Mat & dst, int method)
 		Mat tmp1,tmp2;
 		conv2(_src, tmp1, kernelX, SIMG_1C16S);
 		conv2(_src, tmp2, kernelY, SIMG_1C16S);
-		dst = funcSobelAmp<short>(tmp1,tmp2);
+		dst = mabs(tmp1) + mabs(tmp2);
 		break;
 	}
 		
@@ -1188,7 +1225,8 @@ void Simg::canny(Mat & src, Mat & dst, int highThreshVal, int lowThreshVal)
 	Mat sx,sy, sxy;
 	Sobel(_src, sx, SIMG_METHOD_SOBEL_X);
 	Sobel(_src, sy, SIMG_METHOD_SOBEL_Y);
-	Sobel(_src, sxy, SIMG_METHOD_SOBEL_XY);
+	sxy = mabs(sx) + mabs(sy);
+	
 	Mat N0;
 	getGradDirectIndex(sx, sy, N0);
 	Mat nms = nonMaxSuppresion(sxy, N0);
