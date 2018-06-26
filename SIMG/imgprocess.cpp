@@ -115,6 +115,105 @@ dtype* getPaddingMemory(dtype* srcBuffer, int srcCols, int srcRows, int padX, in
 	return padSrcBuffer;
 }
 
+short getGradDirectAccu(int x, int y)
+{
+	int angle = (short)(atan2(y, x) * 180 / SIMG_PI);
+	if (angle < 0)
+	{
+		angle += 180;
+	}
+	if (angle >= 0 && angle < 22.5)
+	{
+		return 0;
+	}
+	else if (angle >= 22.5 && angle < 67.5)
+	{
+		return 1;
+	}
+	else if (angle >= 67.5 && angle < 112.5)
+	{
+		return 2;
+	}
+	else if (angle >= 112.5 && angle < 167.5)
+	{
+		return 3;
+	}
+	else
+	{
+		return 0;
+	}
+
+}
+
+void getGradDirectIndex(Mat _sx, Mat _sy, Mat &dstN0)
+{
+	assert(_sx.datatype() == SIMG_1C16S && _sy.datatype() == SIMG_1C16S);
+	Mat sx = _sx.copy();
+	Mat sy = _sy.copy();
+
+	int cols = sx.cols();
+	int rows = sx.rows();
+
+	dstN0 = Mat(cols, rows, SIMG_1C16S);
+
+	short *N0DataPtr = (short*)dstN0.dataPtr();
+
+	short *xDataPtr = (short*)sx.dataPtr();
+	short *yDataPtr = (short*)sy.dataPtr();
+	//{ 1,1 - gradCols,-gradCols,-1 - gradCols };
+	int directArrayN0[] = { -1,1 - cols , -cols, -1 - cols };
+
+	for (int i = 0; i < cols * rows; i++)
+	{
+		short x = xDataPtr[i];
+		short y = yDataPtr[i];
+		int direct = getGradDirectAccu(x, y);
+		//printf("%d,%d,%d\n", x, y, direct);
+		short indexN0 = directArrayN0[direct];
+		N0DataPtr[i] = indexN0;
+	}
+}
+
+Mat nonMaxSuppresion(Mat _grad, Mat _N0)
+{
+	Mat grad = _grad.copy();
+	Mat N0 = _N0.copy();
+	int gradCols = grad.cols();
+	int gradRows = grad.rows();
+	int gradDataLength = gradCols * gradRows;
+
+	Mat ret = Mat(gradCols, gradRows, SIMG_1C16S);
+
+	short* gradBuffer = (short*)grad.dataPtr();
+	short* N0Buffer = (short*)N0.dataPtr();
+	short* retBuffer = (short*)ret.dataPtr();
+
+	for (int i = 0; i < gradDataLength; i++)
+	{
+		int x = i % gradCols;
+		int y = i / gradCols;
+		if (x > 0 && y > 0 && x < gradCols - 2 && y < gradCols - 2)
+		{
+			short indexN0 = N0Buffer[i];
+
+			short originGrad= gradBuffer[i];
+			short N0Grad = gradBuffer[i + indexN0];
+			short N1Grad = gradBuffer[i - indexN0];
+			
+
+			if (originGrad < N0Grad || originGrad < N1Grad)
+			{
+				retBuffer[i] = 0;
+			}
+			else
+			{
+				retBuffer[i] = originGrad;
+			}
+		}
+	}
+	return ret;
+}
+
 template<typename dtype>
 Mat funcAbs(Mat &m1)
 {
@@ -133,6 +232,97 @@ Mat funcAbs(Mat &m1)
 		
 	}
 	return ret;
+}
+
+
+template<typename dtype>
+Mat funcSobelAmp(Mat sx, Mat sy)
+{
+	Mat ret(sx.cols(), sx.rows(), sx.datatype());
+	Mat _sx = sx.copy();
+	Mat _sy = sy.copy();
+	dtype* _sxBuffer = (dtype*)_sx.dataPtr();
+	dtype* _syBuffer = (dtype*)_sy.dataPtr();
+
+	dtype* retBuffer = (dtype*)ret.dataPtr();
+	int dataLength = _sx.cols() * _sx.rows();
+	int channel = ret.channels();
+	for (int i = 0; i < dataLength; i++)
+	{
+		for (int ch = 0; ch < channel; ch++)
+		{
+			dtype d1 = _sxBuffer[i*channel + ch];
+			dtype d2 = _syBuffer[i*channel + ch];
+			retBuffer[i*channel + ch] = (dtype)sqrt(d1 * d1 + d2 * d2);
+		}
+
+	}
+	return ret;
+}
+
+Mat doubleThreshold(Mat _nms, int LT, int HT)
+{
+	Mat nms = _nms.copy();
+	Mat ret(nms.cols(), nms.rows(), SIMG_1C8U);
+	int dataLength = ret.cols() *ret.rows();
+	short *nmsDataPtr = (short*)nms.dataPtr();
+	uchar *retDataPtr = ret.dataPtr();
+	for (int i = 0; i < dataLength; i++)
+	{
+		short nmsData = nmsDataPtr[i];
+		if (nmsData > HT)
+		{
+			retDataPtr[i] = 255;	 //strong boundary
+		}
+		else if (nmsData < LT)
+		{
+			retDataPtr[i] = 0;	 //strong boundary
+		}
+		else
+		{
+			retDataPtr[i] = 1;	//weak boundary
+		}
+	}
+	return ret;
+}
+
+void doubleThresholdLink(Mat &_dt)
+{
+	Mat dt = _dt.copy();
+	int dtCols = dt.cols();
+	int dtRows = dt.rows();
+	int dataLength = dtCols * dtRows;
+	
+	uchar* dtPtr = dt.dataPtr();
+	for (int i = 0; i < dataLength; i++)
+	{
+		uchar p = dtPtr[i];
+		if (1 == p)	//weak boundard
+		{
+			int x = i % dtCols;
+			int y = i / dtCols;
+			if (x < 1 || y < 1 || x > dtCols - 2 || y > dtRows - 2) continue;
+			uchar pUL = dtPtr[i - 1 - dtCols];
+			uchar pU = dtPtr[i  - dtCols];
+			uchar pUR = dtPtr[i + 1 - dtCols];
+			uchar pL = dtPtr[i - 1];
+			uchar pR = dtPtr[i + 1];
+			uchar pD = dtPtr[i + dtCols];
+			uchar pDL = dtPtr[i - 1 + dtCols];
+			uchar pDR = dtPtr[i + 1 + dtCols];
+			if (pUL == 255 || pU == 255 || pUR == 255 || pL == 255 || pR == 255 || pD == 255 || pDL == 255 || pDR == 255)
+			{
+				dtPtr[i] = 255;
+				doubleThresholdLink(dt);
+			}
+			else
+			{
+				dtPtr[i] = 0;
+			}
+
+		}
+		
+	}
 }
 
 //需要特例化float的类型
@@ -961,29 +1151,27 @@ void Simg::Sobel(Mat & src, Mat & dst, int method)
 	Mat kernelY(3, 3, SIMG_1C32F);
 	Mat kernelX(3, 3, SIMG_1C32F);
 
-	kernelY.setPixel(0, 0, -3); kernelY.setPixel(1, 0, 0); kernelY.setPixel(2, 0, 3);
-	kernelY.setPixel(0, 1, -10); kernelY.setPixel(1, 1, 0); kernelY.setPixel(2, 1, 10);
-	kernelY.setPixel(0, 2, -3); kernelY.setPixel(1, 2, 0); kernelY.setPixel(2, 2, 3);
+	kernelX.setPixel(0, 0, -1); kernelX.setPixel(1, 0, 0); kernelX.setPixel(2, 0, 1);
+	kernelX.setPixel(0, 1, -2); kernelX.setPixel(1, 1, 0); kernelX.setPixel(2, 1, 2);
+	kernelX.setPixel(0, 2, -1); kernelX.setPixel(1, 2, 0); kernelX.setPixel(2, 2, 1);
 
-	kernelX.setPixel(0, 0, -3); kernelX.setPixel(1, 0, -10); kernelX.setPixel(2, 0, -3);
-	kernelX.setPixel(0, 1, 0); kernelX.setPixel(1, 1, 0); kernelX.setPixel(2, 1, 0);
-	kernelX.setPixel(0, 2, 3); kernelX.setPixel(1, 2, 10); kernelX.setPixel(2, 2, 3);
+	kernelY.setPixel(0, 0, 1); kernelY.setPixel(1, 0, 2); kernelY.setPixel(2, 0, 1);
+	kernelY.setPixel(0, 1, 0); kernelY.setPixel(1, 1, 0); kernelY.setPixel(2, 1, 0);
+	kernelY.setPixel(0, 2, -1); kernelY.setPixel(1, 2, -2); kernelY.setPixel(2, 2, -1);
 	switch (method)
 	{
 	case SIMG_METHOD_SOBEL_X:
 		conv2(_src, dst, kernelX,SIMG_1C16S);
-		dst = mabs(dst);
 		break;
 	case SIMG_METHOD_SOBEL_Y:
 		conv2(_src, dst, kernelY, SIMG_1C16S);
-		dst = mabs(dst);
 		break;
 	case SIMG_METHOD_SOBEL_XY:
 	{
 		Mat tmp1,tmp2;
 		conv2(_src, tmp1, kernelX, SIMG_1C16S);
 		conv2(_src, tmp2, kernelY, SIMG_1C16S);
-		dst = mabs(tmp1) + mabs(tmp2);
+		dst = funcSobelAmp<short>(tmp1,tmp2);
 		break;
 	}
 		
@@ -997,9 +1185,16 @@ void Simg::canny(Mat & src, Mat & dst, int highThreshVal, int lowThreshVal)
 	assert(!src.isEmpty() && src.datatype() == SIMG_1C8U);
 
 	Mat _src = src.copy();
-	Mat sx,sy;
+	Mat sx,sy, sxy;
 	Sobel(_src, sx, SIMG_METHOD_SOBEL_X);
 	Sobel(_src, sy, SIMG_METHOD_SOBEL_Y);
+	Sobel(_src, sxy, SIMG_METHOD_SOBEL_XY);
+	Mat N0;
+	getGradDirectIndex(sx, sy, N0);
+	Mat nms = nonMaxSuppresion(sxy, N0);
+	Mat doubleTH = doubleThreshold(nms, lowThreshVal, highThreshVal);
+	doubleThresholdLink(doubleTH);
+	dst =  doubleTH;
 }
 
 Mat Simg::mabs(Mat & m1)

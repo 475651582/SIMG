@@ -222,8 +222,8 @@ LRESULT CALLBACK Simg::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lP
 
 			short minValue = matMin[0];
 			short maxValue = matMax[0];
-			//short minValue = -4000;
-			//short maxValue = 4000;
+			//minValue = 0;
+			//maxValue = 255;
 			for (int i = 0; i < win->_mat._rows * win->_mat._cols; i++)
 			{
 				int x = i % win->_mat._cols;
