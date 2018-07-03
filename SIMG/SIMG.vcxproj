@@ -157,6 +157,7 @@
     <ClInclude Include="simgMat.h" />
     <ClInclude Include="simgWindow.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="stree.hpp" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
