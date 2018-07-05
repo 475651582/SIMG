@@ -20,24 +20,39 @@ template<class T> struct binaryTreeNode
 	{};
 };
 
+template<class T> struct treeNode
+{
+	treeNode<T> *_child;
+	treeNode<T> *_next;
+	treeNode<T> *_dad;
+	T _data;
+	treeNode(const T data)
+		:_data(data)
+		, _next(NULL)
+		, _child(NULL)
+		, _dad(NULL)
+	{};
+};
+
+
 template<class T>
-class Tree
+class BinaryTree
 {
 	typedef binaryTreeNode<T> node;
 public:
-	Tree(const T element)
+	BinaryTree(const T element)
 	{
 		_root = new node(element);
 	}
-	Tree(node* root)
+	BinaryTree(node* root)
 	{
 		_root = root;
 	}
-	Tree(node root)
+	BinaryTree(node root)
 	{
 		_root = &root;
 	}
-	~Tree()
+	~BinaryTree()
 	{
 		makeEmpty(_root);
 	}
@@ -186,4 +201,123 @@ private:
 			}
 		}
 	}
+};
+
+template<class T>
+class Tree
+{
+	typedef treeNode<T> node;
+public:
+	Tree(const T element)
+	{
+		_root = new node(element);
+	}
+	Tree(node* root)
+	{
+		_root = root;
+	}
+	Tree(node root)
+	{
+		_root = &root;
+	}
+	~Tree()
+	{
+		
+	}
+
+	void print()
+	{
+		printNode(_root);
+	}
+	int depth()
+	{
+		return getNodeDepth(_root);
+	}
+	
+	
+
+	void insert(const T element, node* &_node)
+	{
+		if (nullptr != _node)
+		{
+			insertNode(element, _node);
+		}
+		else
+		{
+			assert(false && "try not to insert element to a null node!");
+		}
+
+	}
+
+	void removeNode(node *&_node)
+	{
+
+		if (nullptr != _node)
+		{
+			removeNode(_node->_child);			
+			
+
+			
+			delete _node; _node = NULL;
+		}
+	}
+	
+
+private:
+	node * _root;
+
+	
+	void insertNode(const T element, node *&_dadNode)
+	{
+		node* newNode = new node(element);
+		newNode->_dad = _dadNode;
+		if (nullptr == _dadNode->_child)
+		{
+			_dadNode->_child = newNode;
+			
+		}
+		else
+		{
+			node* nextNode = _dadNode->_child;
+			
+			while (nextNode)
+			{
+				if (nullptr == nextNode->_next)
+				{
+					nextNode->_next = newNode;
+					break;
+				}
+				else
+				{
+					nextNode = nextNode->_next;
+				}
+				
+			}
+			
+		}
+	}
+	
+	void printNode(node *&_node)
+	{
+		
+		if (nullptr != _node)
+		{
+			printNode(_node->_child);
+			printNode(_node->_next);
+
+			std::cout << _node->_data << " ";
+		}
+	}
+	
+	int getNodeDepth(node *_node)
+	{
+		if (nullptr == _node)
+		{
+			return 0;
+		}
+		return  MAX(getNodeDepth(_node->_child) + 1, getNodeDepth(_node->_next));
+	}
+
+
+	
 };
