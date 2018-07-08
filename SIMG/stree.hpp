@@ -214,6 +214,10 @@ public:
 	{
 		_root = new node(element);
 	}
+	Tree()
+	{
+		;
+	}
 	Tree(node* root)
 	{
 		_root = root;
@@ -377,4 +381,12 @@ private:
 		}
 	}
 	
+};
+
+
+struct DTreeProperty
+{
+	bool isEnd = false;
+	int classResult = -1;
+	int attribute = -1;
 };
