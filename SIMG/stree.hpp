@@ -386,7 +386,11 @@ private:
 
 struct DTreeProperty
 {
-	bool isEnd = false;
-	int classResult = -1;
-	int attribute = -1;
+	DTreeProperty(int attribute)
+	{
+		_attribute = attribute;
+	}
+	bool _isEnd = false;
+	int _classResult = -1;
+	int _attribute = -1;
 };
