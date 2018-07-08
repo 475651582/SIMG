@@ -24,11 +24,13 @@ template<class T> struct treeNode
 {
 	treeNode<T> *_child;
 	treeNode<T> *_next;
+	treeNode<T> *_prev;
 	treeNode<T> *_dad;
 	T _data;
 	treeNode(const T data)
 		:_data(data)
 		, _next(NULL)
+		, _prev(NULL)
 		, _child(NULL)
 		, _dad(NULL)
 	{};
@@ -222,7 +224,7 @@ public:
 	}
 	~Tree()
 	{
-		
+		remove(_root);
 	}
 
 	void print()
@@ -249,19 +251,17 @@ public:
 
 	}
 
-	void removeNode(node *&_node)
+	void remove(node *&_node)
 	{
-
-		if (nullptr != _node)
-		{
-			removeNode(_node->_child);			
-			
-
-			
-			delete _node; _node = NULL;
-		}
+		removeNode(_node, _node);
 	}
 	
+	vector<node*> find(const T element)
+	{
+		vector<node*> ret;
+		findElement(element, _root, _root, ret);
+		return ret;
+	}
 
 private:
 	node * _root;
@@ -285,6 +285,7 @@ private:
 				if (nullptr == nextNode->_next)
 				{
 					nextNode->_next = newNode;
+					newNode->_prev = nextNode;
 					break;
 				}
 				else
@@ -318,6 +319,62 @@ private:
 		return  MAX(getNodeDepth(_node->_child) + 1, getNodeDepth(_node->_next));
 	}
 
+	void removeNode(node* & target, node* origin)
+	{
+		if (target != NULL)
+		{
+			
+			if (nullptr != target->_next && target != origin)
+			{
+				removeNode(target->_next, origin);
 
+			}
+			if (nullptr != target->_child)
+			{
+				removeNode(target->_child, origin);
+			}
+
+			//removeNode(target->_child, origin);
+
+
+			node* tmpNext = target->_next;
+			node* tmpPrev = target->_prev;
+			node* tmpDad = target->_dad;
+			
+
+			if (nullptr != tmpNext && nullptr == tmpDad->_child)
+			{
+				tmpDad->_child = tmpNext;
+			}
+			if (nullptr != tmpPrev && nullptr != tmpNext)
+			{
+				tmpPrev->_next = tmpNext;
+				tmpNext->_prev = tmpPrev;
+			}
+
+			delete target; target = NULL;
+
+		}
+	}
+
+	void findElement(const T element, node* target, node* origin, vector<node*> &list)
+	{
+		if (nullptr != target)
+		{
+			if (nullptr != target->_next && target != origin)
+			{
+				findElement(element, target->_next, origin, list);
+
+			}
+			if (nullptr != target->_child)
+			{
+				findElement(element, target->_child, origin, list);
+			}
+			if (element == target->_data)
+			{
+				list.push_back(target);
+			}
+		}
+	}
 	
 };

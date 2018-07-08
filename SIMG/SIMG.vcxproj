@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClInclude Include="imgprocess.h" />
     <ClInclude Include="jpgd.h" />
+    <ClInclude Include="ML.h" />
     <ClInclude Include="simg.h" />
     <ClInclude Include="simgMat.h" />
     <ClInclude Include="simgWindow.h" />
@@ -163,6 +164,7 @@
   <ItemGroup>
     <ClCompile Include="imgprocess.cpp" />
     <ClCompile Include="jpgd.cpp" />
+    <ClCompile Include="ML.cpp" />
     <ClCompile Include="simg.cpp" />
     <ClCompile Include="simgMat.cpp" />
     <ClCompile Include="simgWindow.cpp" />
