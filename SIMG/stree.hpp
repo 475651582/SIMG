@@ -240,6 +240,7 @@ public:
 		return getNodeDepth(_root);
 	}
 	
+	node* root() { return _root; };
 	
 
 	void insert(const T element, node* &_node)
@@ -393,4 +394,12 @@ struct DTreeProperty
 	bool _isEnd = false;
 	int _classResult = -1;
 	int _attribute = -1;
+	int _value = -1;
+	bool operator == (const DTreeProperty &dt) const
+	{
+		if (_isEnd == dt._isEnd && _classResult == dt._classResult && _attribute == dt._attribute && _value == dt._value)
+			return true;
+		else
+			return false;
+	}
 };
